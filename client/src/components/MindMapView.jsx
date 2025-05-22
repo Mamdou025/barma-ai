@@ -56,7 +56,7 @@ export default function MindMapView({ markdown, onGenerate }) {
 
       <textarea
         className="border border-gray-300 p-2 mt-4 w-full h-28"
-        placeholder="Your notes..."
+        placeholder="Vos notes..."
       />
     </div>
   );
