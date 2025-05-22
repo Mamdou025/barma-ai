@@ -1,0 +1,37 @@
+/* src/App.css */
+
+
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: sans-serif;
+}
+
+.app-header {
+  padding: 1rem;
+  background-color: #1e293b;
+  color: white;
+  text-align: center;
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #f1f5f9;
+  padding: 1rem;
+  overflow-y: auto;
+  border-right: 1px solid #ccc;
+}
+
+.main-panel {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
