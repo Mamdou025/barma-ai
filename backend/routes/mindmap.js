@@ -4,7 +4,7 @@ const { supabase } = require('../utils/supabaseClient');
 
 const router = express.Router();
 
-router.post('/mindmap', async (req, res) => {
+router.post('https://barma-ai-backend.onrender.com/mindmap', async (req, res) => {
   const { document_ids } = req.body;
 
   console.log('🟡 Received document_ids:', document_ids);

@@ -4,7 +4,7 @@ export default function Sidebar({ onSelectionChange, selectedDocumentIds }) {
   const [documents, setDocuments] = useState([]);
 
   useEffect(() => {
-    fetch('/api/documents')
+    fetch('https://barma-ai-backend.onrender.com/api/documents')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data.documents)) {
@@ -32,7 +32,7 @@ export default function Sidebar({ onSelectionChange, selectedDocumentIds }) {
     formData.append('file', file);
 
     try {
-      const res = await fetch('/api/upload', {
+      const res = await fetch('https://barma-ai-backend.onrender.com/api/upload', {
         method: 'POST',
         body: formData,
       });
@@ -52,7 +52,7 @@ export default function Sidebar({ onSelectionChange, selectedDocumentIds }) {
     if (!confirm) return;
 
     try {
-      const res = await fetch(`/api/documents/${id}`, { method: 'DELETE' });
+      const res = await fetch(`https://barma-ai-backend.onrender.com/api/documents/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setDocuments((prev) => prev.filter((doc) => doc.id !== id));
         onSelectionChange(selectedDocumentIds.filter((docId) => docId !== id));

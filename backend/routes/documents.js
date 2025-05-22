@@ -3,7 +3,7 @@ const { supabase } = require('../utils/supabaseClient');
 
 const router = express.Router();
 
-router.get('/documents', async (req, res) => {
+router.get('/https://barma-ai-backend.onrender.com/documents', async (req, res) => {
   const { data, error } = await supabase
     .from('documents')
     .select('id, title, uploaded_at, storage_url, text_content')

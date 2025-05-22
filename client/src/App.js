@@ -12,7 +12,7 @@ export default function App() {
   if (selectedDocumentIds.length === 0) return alert('Select at least one document.');
 
   try {
-    const res = await fetch('/api/mindmap', {
+    const res = await fetch('https://barma-ai-backend.onrender.com/api/mindmap', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ document_ids: selectedDocumentIds })

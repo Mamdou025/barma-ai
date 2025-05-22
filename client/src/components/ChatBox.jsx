@@ -12,7 +12,7 @@ export default function ChatBox({ selectedDocumentIds }) {
     setInput('');
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('https://barma-ai-backend.onrender.com/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
