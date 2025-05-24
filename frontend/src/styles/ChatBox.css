@@ -29,8 +29,15 @@
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 15px;
-  background: #fff;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-top: 1px solid #ccc;
+
+}
+.chat-input {
+  padding: 1rem;
+  border-top: 1px solid #ccc;
+  background: white;
 }
 
 .empty-state {

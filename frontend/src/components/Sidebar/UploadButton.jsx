@@ -22,7 +22,7 @@ export default function UploadButton({ onUpload }) {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('https://barma-ai-backend.onrender.com/api/upload', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/upload`, {
         method: 'POST',
         body: formData,
       });

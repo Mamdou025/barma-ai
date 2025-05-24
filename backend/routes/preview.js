@@ -5,7 +5,7 @@ const { parsedTexts } = require('./upload');
 
 const router = express.Router();
 
-router.post('https://barma-ai-backend.onrender.com/preview', (req, res) => {
+router.post('/preview', (req, res) => {
   const { filename } = req.body;
 
   if (!parsedTexts[filename]) {

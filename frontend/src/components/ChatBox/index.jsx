@@ -36,7 +36,8 @@ export default function ChatBox({ documentId }) {
 
       console.log('Sending request with body:', JSON.stringify(requestBody));
 
-      const response = await fetch('https://barma-ai-backend.onrender.com/api/chat', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/chat`, {
+
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,8 +56,8 @@ export default function ChatBox({ documentId }) {
 
       const data = await response.json();
       console.log('Success response:', data);
+      console.log("✅ GPT Reply:", data.reply);
       setMessages(prev => [...prev, { text: data.reply, isUser: false }]);
-
     } catch (err) {
       console.error('Chat error:', err);
       setError(err.message || 'Failed to get response. Please try again.');

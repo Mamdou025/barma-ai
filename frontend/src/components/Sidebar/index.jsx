@@ -14,7 +14,8 @@ export default function Sidebar({ onSelectDocument, selectedDocument }) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('https://barma-ai-backend.onrender.com/api/documents');
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/documents`)
+;
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const data = await response.json();

@@ -3,11 +3,15 @@ const { supabase } = require('../utils/supabaseClient');
 
 const router = express.Router();
 
-router.get('/https://barma-ai-backend.onrender.com/documents', async (req, res) => {
+router.get('/documents', async (req, res) => {
+  console.log('📡 Received request for /api/documents from frontend');
+
   const { data, error } = await supabase
     .from('documents')
     .select('id, title, uploaded_at, storage_url, text_content')
     .order('uploaded_at', { ascending: false });
+
+    
 
   if (error) {
     console.error('❌ Failed to fetch documents:', error.message);

@@ -18,8 +18,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(bodyParser.json());
 
-app.use('/api', uploadRoute.router);
-
+app.use('/api', uploadRoute);
 app.use('/api', chatRoute);
 app.use('/api', previewRoute);
 app.use('/api', mindmapRoute);

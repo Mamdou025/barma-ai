@@ -38,7 +38,7 @@ const generateMindMap = async () => {
     setLoading(true);
     setError(null);
 
-    const response = await fetch('https://barma-ai-backend.onrender.com/api/mindmap', {
+    const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/mindmap`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,6 +51,9 @@ const generateMindMap = async () => {
     }
 
     const data = await response.json();
+    console.log("🧠 Raw mindmap data:", data.mindmap);
+console.log("🧠 typeof data.mindmap:", typeof data.mindmap);
+
 try {
   if (typeof data.mindmap === 'string') {
     console.warn("⚠️ Received string instead of object, attempting parse.");

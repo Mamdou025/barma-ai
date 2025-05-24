@@ -4,7 +4,7 @@ const { supabase } = require('../utils/supabaseClient');
 
 const router = express.Router();
 
-router.post('https://barma-ai-backend.onrender.com/mindmap', async (req, res) => {
+router.post('/mindmap', async (req, res) => {
   const { document_ids } = req.body;
 
   console.log('🟡 Received document_ids:', document_ids);
@@ -30,7 +30,7 @@ router.post('https://barma-ai-backend.onrender.com/mindmap', async (req, res) =>
           role: 'system',
           content: `Tu es un assistant juridique. À partir d’un texte de décision judiciaire, génère une mind map hiérarchisée sous format JSON avec les clés : "title" (string) et "children" (array récursive).
 
-Structure logique : Parties, Faits, Articles de loi, Motifs, Conclusion.
+Structure logique : Parties, Faits, Articles de loi, Motifs, Conclusion. Par contre il s'agit d'un resumé et les documents ne suivent pas une structure attendue mais determine les elements importnts et génère quand meme un mindmap qui sort l'essentiel du document logiquement. Evite aussi de generer des mindmaps avec des sections vides 
 
 Retourne uniquement un objet JSON. Exemple :
 {
