@@ -1,0 +1,79 @@
+.sidebar-container {
+  height: 100%;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  background-color: #f9f9f9;
+  border-right: 1px solid #ddd;
+}
+
+.sidebar-header {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.sidebar-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.upload-button,
+.discover-button {
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.upload-button:hover,
+.discover-button:hover {
+  background-color: #f0f0f0;
+}
+
+.select-all {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.document-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.document-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.doc-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.pdf-icon {
+  font-size: 18px;
+}
+
+.doc-title {
+  font-size: 14px;
+  color: #333;
+}
+
+.doc-checkbox {
+  cursor: pointer;
+}

@@ -1,84 +1,90 @@
-import { useState, useEffect } from 'react';
-import DocumentList from './DocumentList';
+import React, { useEffect, useState } from 'react';
 import UploadButton from './UploadButton';
+import DocumentList from './DocumentList';
 import PDFViewer from './PDFViewer';
 import '../../styles/Sidebar.css';
 
-export default function Sidebar({ onSelectDocument, selectedDocument }) {
+function Sidebar({ onSelectDocument, selectedDocument }) {
   const [documents, setDocuments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchDocuments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/documents`)
-;
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-      const data = await response.json();
-      const docsArray = Array.isArray(data) ? data : data.documents || [];
-      setDocuments(docsArray);
-    } catch (err) {
-      console.error('Failed to fetch documents:', err);
-      setError(err.message || 'Failed to load documents');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [selectedDocs, setSelectedDocs] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
 
   useEffect(() => {
-    fetchDocuments();
-  }, []);
+    fetch('/api/documents')
+      .then((res) => res.json())
+      .then((data) => {
+        setDocuments(data.documents);
+        if (selectAll) {
+          setSelectedDocs(data.documents.map(doc => doc.id));
+        }
+      });
+  }, [selectAll]);
 
-  const handleDocumentSelect = (doc) => {
-    if (doc?.storage_url?.startsWith('http')) {
-      onSelectDocument(doc); // ✅ send full document object to App.js
+  const handleDocumentSelect = (id) => {
+    const updatedSelection = selectedDocs.includes(id)
+      ? selectedDocs.filter(docId => docId !== id)
+      : [...selectedDocs, id];
+    setSelectedDocs(updatedSelection);
+    const selected = documents.find(doc => doc.id === id);
+    onSelectDocument(selected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedDocs([]);
     } else {
-      console.error('Invalid document URL:', doc);
-      setError('Selected document has an invalid URL');
+      setSelectedDocs(documents.map(doc => doc.id));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  const handleDelete = async () => {
+    if (!selectedDocument) return;
+
+    try {
+      const response = await fetch(`/api/documents/${selectedDocument.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete document');
+
+      setDocuments(prev => prev.filter(doc => doc.id !== selectedDocument.id));
+      setSelectedDocs(prev => prev.filter(id => id !== selectedDocument.id));
+      onSelectDocument(null);
+    } catch (err) {
+      console.error('Delete error:', err);
     }
   };
 
-  if (loading) {
-    return <div className="sidebar-loading">Loading documents...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="sidebar-error">
-        <p>Error: {error}</p>
-        <button onClick={fetchDocuments}>Retry</button>
-      </div>
-    );
-  }
-
   return (
-    <div className="sidebar">
-      <div className="sidebar-header">
-        <h3 className="sidebar-title">Documents</h3>
-        <div className="sidebar-controls">
-          <UploadButton onUpload={fetchDocuments} />
-          <button className="refresh-button" onClick={fetchDocuments} disabled={loading}>
-            ↻ Refresh
-          </button>
-        </div>
+    <div className="sidebar-container">
+      <h2 className="sidebar-header">Sources</h2>
+      <div className="sidebar-actions">
+        <UploadButton onUploadSuccess={() => window.location.reload()} />
+        <button className="delete-button" onClick={handleDelete} disabled={!selectedDocument}>Delete</button>
       </div>
 
-      <DocumentList 
+      <div className="select-all">
+        <input
+          type="checkbox"
+          checked={selectAll}
+          onChange={toggleSelectAll}
+        /> Select all sources
+      </div>
+
+      <DocumentList
         documents={documents}
-        onSelect={handleDocumentSelect} // ✅ wrapped with URL check
-        selectedDocument={selectedDocument}
+        selectedDocs={selectedDocs}
+        onDocumentSelect={handleDocumentSelect}
       />
 
       {selectedDocument && (
         <div className="pdf-preview-container">
-          <h4>{selectedDocument.title || 'Document Preview'}</h4>
           <PDFViewer pdfUrl={selectedDocument.storage_url} />
         </div>
       )}
     </div>
   );
 }
+
+export default Sidebar;
