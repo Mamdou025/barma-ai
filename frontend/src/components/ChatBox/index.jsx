@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
 import { api } from '../../utils/api';
+import ChatHistory from './ChatHistory';
+
 
 const ChatBox = ({ selectedDoc }) => {
   const [messages, setMessages] = useState([]);
@@ -68,6 +70,7 @@ const ChatBox = ({ selectedDoc }) => {
   return (
     <div className="chat-container">
       <div className="chat-header">
+        <ChatHistory documentId={selectedDoc?.id} />
         <h2>💬 Chat with AI</h2>
         {selectedDoc && (
           <div className="chat-context">

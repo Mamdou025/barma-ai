@@ -13,11 +13,13 @@ function cosineSimilarity(a, b) {
 }
 
 router.post('/chat', async (req, res) => {
-  const { message, document_ids } = req.body;
-console.log('📦 Received document_ids:', document_ids);
-if (!Array.isArray(document_ids) || document_ids.length === 0) {
-  return res.status(400).json({ error: 'No document_ids provided' });
-}
+  const { message, document_ids, session_id } = req.body;
+  const startTime = Date.now();
+  
+  console.log('📦 Received document_ids:', document_ids);
+  if (!Array.isArray(document_ids) || document_ids.length === 0) {
+    return res.status(400).json({ error: 'No document_ids provided' });
+  }
 
   try {
     // 1. Embed the user's question
@@ -35,7 +37,6 @@ if (!Array.isArray(document_ids) || document_ids.length === 0) {
       .select('content, embedding, chunk_index, document_id')
       .in('document_id', document_ids);
 
-
     if (fetchErr) {
       console.error('❌ Failed to fetch chunks:', fetchErr.message);
       return res.status(500).json({ error: 'Error fetching chunks' });
@@ -45,7 +46,7 @@ if (!Array.isArray(document_ids) || document_ids.length === 0) {
     const scoredChunks = allChunks.map(chunk => {
       const embedding = Array.isArray(chunk.embedding)
         ? chunk.embedding
-        : JSON.parse(chunk.embedding); // Ensure it's an array
+        : JSON.parse(chunk.embedding);
 
       const similarity = cosineSimilarity(questionEmbedding, embedding);
       return { ...chunk, similarity };
@@ -79,7 +80,36 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
       ]
     });
 
-    res.json({ reply: completion.choices[0].message.content });
+    const aiResponse = completion.choices[0].message.content;
+    const responseTime = Date.now() - startTime;
+
+    // 6. 🆕 SAVE CHAT LOG TO DATABASE
+    try {
+      const { error: logError } = await supabase
+        .from('chat_logs')
+        .insert([
+          {
+            session_id: session_id || null,
+            document_id: document_ids[0], // Use first document for logging
+            user_message: message,
+            ai_response: aiResponse,
+            response_time_ms: responseTime,
+            user_ip: req.ip || req.connection.remoteAddress,
+            user_agent: req.get('User-Agent')
+          }
+        ]);
+
+      if (logError) {
+        console.error('⚠️ Failed to save chat log:', logError.message);
+        // Don't fail the request if logging fails
+      } else {
+        console.log('✅ Chat log saved successfully');
+      }
+    } catch (logErr) {
+      console.error('⚠️ Chat logging error:', logErr);
+    }
+
+    res.json({ reply: aiResponse, response_time_ms: responseTime });
 
   } catch (err) {
     console.error('OpenAI API error:', err);

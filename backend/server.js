@@ -2,13 +2,16 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-const bodyParser = require('body-parser');
 const uploadRoute = require('./routes/upload');
 const chatRoute = require('./routes/chat');
 const previewRoute = require('./routes/preview');
 const mindmapRoute = require('./routes/mindmap');
 const documentsRoute = require('./routes/documents');
 const deletedocument = require('./routes/deleteDocument')
+const chatLogsRoute = require('./routes/chatlogs'); // 🆕 ADD THIS
+const notesRoute = require('./routes/notes'); // 🆕 NEW
+
+
 
 
 const app = express();
@@ -16,7 +19,6 @@ const port = process.env.PORT || 5000;
 
 
 app.use(cors());
-app.use(bodyParser.json());
 
 app.use('/api', uploadRoute);
 app.use('/api', chatRoute);
@@ -24,6 +26,8 @@ app.use('/api', previewRoute);
 app.use('/api', mindmapRoute);
 app.use('/api', documentsRoute);
 app.use('/api', deletedocument);
+app.use('/api', chatLogsRoute); // 🆕 NEW
+app.use('/api', notesRoute); // 🆕 NEW
 
 
 
