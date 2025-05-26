@@ -24,7 +24,7 @@ function UploadButton({ onUploadSuccess }) {
 
   return (
     <label className="ajouter-button">
-      + Ajouter
+      ➕ Ajouter
       <input
         type="file"
         accept="application/pdf"

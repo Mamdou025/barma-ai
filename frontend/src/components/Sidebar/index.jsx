@@ -61,7 +61,9 @@ function Sidebar({ onSelectDocument, selectedDocument }) {
       <h2 className="sidebar-header">Sources</h2>
       <div className="sidebar-actions">
         <UploadButton onUploadSuccess={() => window.location.reload()} />
-        <button className="delete-button" onClick={handleDelete} disabled={!selectedDocument}>Delete</button>
+        <button className="delete-button" onClick={handleDelete} disabled={!selectedDocument}>
+          ❌ Supprimer
+        </button>
       </div>
 
       <div className="select-all">
@@ -69,7 +71,7 @@ function Sidebar({ onSelectDocument, selectedDocument }) {
           type="checkbox"
           checked={selectAll}
           onChange={toggleSelectAll}
-        /> Select all sources
+        /> Choisir toutes les sources
       </div>
 
       <DocumentList
