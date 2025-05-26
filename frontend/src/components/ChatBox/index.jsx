@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
+import { api } from '../../utils/api';
 
 const ChatBox = ({ selectedDoc }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -25,22 +27,35 @@ const ChatBox = ({ selectedDoc }) => {
 
     const userMessage = input;
     setInput('');
+    setError(null);
+    
+    // Add user message to chat
     setMessages(prev => [...prev, { message: userMessage, isUser: true }]);
     setLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        `Based on the document "${selectedDoc.title}", I can help you understand the key concepts and legal implications.`,
-        'This document contains important information about legal frameworks and compliance requirements.',
-        'The document outlines several key clauses that are critical for understanding the legal obligations.',
-        'I can help you analyze the risk factors and implications mentioned in this document.'
-      ];
+    try {
+      // Call your real API
+      const response = await api.sendMessage(userMessage, [selectedDoc.id]);
       
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      setMessages(prev => [...prev, { message: randomResponse, isUser: false }]);
+      // Add AI response to chat
+      setMessages(prev => [...prev, { 
+        message: response.reply, 
+        isUser: false 
+      }]);
+      
+    } catch (err) {
+      console.error('Chat error:', err);
+      setError(err.message);
+      
+      // Add error message to chat
+      setMessages(prev => [...prev, {
+        message: `Sorry, I encountered an error: ${err.message}`,
+        isUser: false,
+        isError: true
+      }]);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -70,7 +85,12 @@ const ChatBox = ({ selectedDoc }) => {
           </div>
         ) : (
           messages.map((msg, index) => (
-            <ChatMessage key={index} message={msg.message} isUser={msg.isUser} />
+            <ChatMessage 
+              key={index} 
+              message={msg.message} 
+              isUser={msg.isUser} 
+              isError={msg.isError}
+            />
           ))
         )}
         

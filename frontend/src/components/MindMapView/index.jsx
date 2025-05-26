@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { api } from '../../utils/api';
 
 const MindMapView = ({ selectedDoc }) => {
-  const [mindMap, setMindMap] = useState('');
+  const [mindMap, setMindMap] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -14,36 +15,36 @@ const MindMapView = ({ selectedDoc }) => {
     setLoading(true);
     setError(null);
     
-    // Simulate mind map generation
-    setTimeout(() => {
-      const sampleMindMap = `# ${selectedDoc.title} - Analysis
-
-## 📋 Key Concepts
-- Legal Framework Overview
-- Compliance Requirements
-- Risk Assessment Guidelines
-- Implementation Strategies
-
-## ⚖️ Legal Implications
-- Regulatory Compliance
-- Liability Considerations
-- Contractual Obligations
-- Dispute Resolution
-
-## 🎯 Action Items
-- Review Section 3.2
-- Update Policy Documents
-- Consult Legal Team
-- Schedule Compliance Audit
-
-## 📊 Risk Factors
-- **High Priority**: Regulatory changes
-- **Medium Priority**: Implementation timeline
-- **Low Priority**: Documentation updates`;
-
-      setMindMap(sampleMindMap);
+    try {
+      const response = await api.generateMindMap([selectedDoc.id]);
+      setMindMap(response.mindmap);
+    } catch (err) {
+      console.error('MindMap generation error:', err);
+      setError(err.message);
+    } finally {
       setLoading(false);
-    }, 2000);
+    }
+  };
+
+  // Convert JSON mindmap to markdown for display
+  const jsonToMarkdown = (node, level = 1) => {
+    if (!node) return '';
+    
+    const heading = `${'#'.repeat(level)} ${node.title || ''}`;
+    
+    if (!node.children || !Array.isArray(node.children)) {
+      return heading;
+    }
+    
+    const children = node.children.map(child => {
+      if (typeof child === 'string') {
+        return `- ${child}`;
+      } else {
+        return jsonToMarkdown(child, level + 1);
+      }
+    }).join('\n');
+    
+    return `${heading}\n${children}`;
   };
 
   const renderMindMap = (text) => {
@@ -54,6 +55,8 @@ const MindMapView = ({ selectedDoc }) => {
         return <h1 key={index} className="mind-map-h1">{line.slice(2)}</h1>;
       } else if (line.startsWith('## ')) {
         return <h2 key={index} className="mind-map-h2">{line.slice(3)}</h2>;
+      } else if (line.startsWith('### ')) {
+        return <h3 key={index} className="mind-map-h3">{line.slice(4)}</h3>;
       } else if (line.startsWith('- ')) {
         return <li key={index} className="mind-map-li">{line.slice(2)}</li>;
       } else if (line.trim()) {
@@ -82,9 +85,17 @@ const MindMapView = ({ selectedDoc }) => {
             <div className="loading-spinner"></div>
             <p>Analyzing document and generating mind map...</p>
           </div>
+        ) : error ? (
+          <div className="mindmap-error">
+            <h3>❌ Error</h3>
+            <p>{error}</p>
+            <button onClick={generateMindMap} className="retry-btn">
+              🔄 Retry
+            </button>
+          </div>
         ) : mindMap ? (
           <div className="mindmap-display">
-            {renderMindMap(mindMap)}
+            {renderMindMap(jsonToMarkdown(mindMap))}
           </div>
         ) : (
           <div className="mindmap-empty">

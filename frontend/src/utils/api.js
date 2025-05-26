@@ -1,7 +1,7 @@
-const API_BASE_URL = 'https://barma-ai-backend.onrender.com';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 export const api = {
-  // Upload PDF
+  // Upload PDF - matches your /api/upload endpoint
   uploadDocument: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -12,37 +12,40 @@ export const api = {
     });
     
     if (!response.ok) {
-      throw new Error('Upload failed');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Upload failed');
     }
     
     return response.json();
   },
 
-  // Get all documents
+  // Get all documents - matches your /api/documents endpoint
   getDocuments: async () => {
     const response = await fetch(`${API_BASE_URL}/api/documents`);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch documents');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to fetch documents');
     }
     
     return response.json();
   },
 
-  // Delete document
+  // Delete document - matches your /api/documents/:id endpoint
   deleteDocument: async (documentId) => {
     const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}`, {
       method: 'DELETE',
     });
     
     if (!response.ok) {
-      throw new Error('Failed to delete document');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to delete document');
     }
     
     return response.json();
   },
 
-  // Chat with AI
+  // Chat with AI - matches your /api/chat endpoint
   sendMessage: async (message, documentIds) => {
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
@@ -51,18 +54,19 @@ export const api = {
       },
       body: JSON.stringify({
         message,
-        document_ids: documentIds,
+        document_ids: documentIds, // Your backend expects this format
       }),
     });
     
     if (!response.ok) {
-      throw new Error('Failed to send message');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to send message');
     }
     
     return response.json();
   },
 
-  // Generate mind map
+  // Generate mind map - matches your /api/mindmap endpoint
   generateMindMap: async (documentIds) => {
     const response = await fetch(`${API_BASE_URL}/api/mindmap`, {
       method: 'POST',
@@ -70,14 +74,39 @@ export const api = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        document_ids: documentIds,
+        document_ids: documentIds, // Your backend expects this format
       }),
     });
     
     if (!response.ok) {
-      throw new Error('Failed to generate mind map');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to generate mind map');
     }
     
     return response.json();
   },
+};
+
+// Helper function to format file size
+export const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+// Helper function to validate PDF file
+export const validatePDFFile = (file) => {
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  
+  if (!file.type.includes('pdf')) {
+    throw new Error('Please select a PDF file');
+  }
+  
+  if (file.size > maxSize) {
+    throw new Error('File size must be less than 10MB');
+  }
+  
+  return true;
 };
