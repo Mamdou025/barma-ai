@@ -1,96 +1,116 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
-import ChatInput from './ChatInput';
-import '../../styles/ChatBox.css';
 
-export default function ChatBox({ documentId }) {
+const ChatBox = ({ selectedDoc }) => {
   const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
-  const handleSend = async (message) => {
-    if (!message.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim()) return;
 
-    if (!documentId) {
-      setError("Please select a document before chatting.");
+    if (!selectedDoc) {
+      alert('Please select a document first');
       return;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
+    const userMessage = input;
+    setInput('');
+    setMessages(prev => [...prev, { message: userMessage, isUser: true }]);
+    setLoading(true);
 
-      const userMessage = { text: message, isUser: true };
-      setMessages(prev => [...prev, userMessage]);
-
-      const requestBody = {
-        message,
-        document_ids: [documentId], // ✅ Include selected document
-      };
-
-      console.log('Sending request with body:', JSON.stringify(requestBody));
-
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/chat`, {
-
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer YOUR_API_KEY' // Uncomment if needed
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log('Response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Error response data:', errorData);
-        throw new Error(errorData.message || `Server responded with ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Success response:', data);
-      console.log("✅ GPT Reply:", data.reply);
-      setMessages(prev => [...prev, { text: data.reply, isUser: false }]);
-    } catch (err) {
-      console.error('Chat error:', err);
-      setError(err.message || 'Failed to get response. Please try again.');
-      setMessages(prev => [...prev, {
-        text: err.message || "Sorry, I couldn't process your request.",
-        isUser: false
-      }]);
-    } finally {
+    // Simulate AI response
+    setTimeout(() => {
+      const responses = [
+        `Based on the document "${selectedDoc.title}", I can help you understand the key concepts and legal implications.`,
+        'This document contains important information about legal frameworks and compliance requirements.',
+        'The document outlines several key clauses that are critical for understanding the legal obligations.',
+        'I can help you analyze the risk factors and implications mentioned in this document.'
+      ];
+      
+      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+      setMessages(prev => [...prev, { message: randomResponse, isUser: false }]);
       setLoading(false);
+    }, 1500);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
   return (
-    <div className="chat-box">
+    <div className="chat-container">
       <div className="chat-header">
-        <h2>Chat with AI</h2>
-        {error && <div className="chat-error">{error}</div>}
+        <h2>💬 Chat with AI</h2>
+        {selectedDoc && (
+          <div className="chat-context">
+            Currently analyzing: <strong>{selectedDoc.title}</strong>
+          </div>
+        )}
       </div>
 
       <div className="chat-messages">
         {messages.length === 0 ? (
-          <div className="empty-state">
-            Ask a question about your documents to get started
+          <div className="chat-empty">
+            <div className="empty-chat-icon">💬</div>
+            <h3>Start a conversation</h3>
+            <p>Ask questions about your uploaded documents and get AI-powered insights.</p>
           </div>
         ) : (
-          messages.map((msg, i) => (
-            <ChatMessage key={i} text={msg.text} isUser={msg.isUser} />
+          messages.map((msg, index) => (
+            <ChatMessage key={index} message={msg.message} isUser={msg.isUser} />
           ))
+        )}
+        
+        {loading && (
+          <div className="message ai-message">
+            <div className="message-avatar">🤖</div>
+            <div className="message-content">
+              <div className="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <ChatInput onSend={handleSend} loading={loading} />
+      <div className="chat-input-container">
+        <div className="chat-input-wrapper">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder={selectedDoc ? "Ask a question about this document..." : "Select a document to start chatting"}
+            disabled={!selectedDoc || loading}
+            rows={1}
+            className="chat-input"
+          />
+          <button 
+            onClick={handleSend}
+            disabled={!input.trim() || !selectedDoc || loading}
+            className="send-button"
+          >
+            {loading ? '⏳' : '🚀'}
+          </button>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default ChatBox;

@@ -1,0 +1,102 @@
+/* Shared Component Styles */
+
+/* Common Button Styles */
+.btn {
+  padding: 6px 12px;
+  border: 1px solid #dadce0;
+  border-radius: 16px;
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  outline: none;
+  font-family: inherit;
+}
+
+.btn:hover {
+  background: #f8f9fa;
+  border-color: #4285f4;
+}
+
+.btn-primary {
+  background: #4285f4;
+  color: white;
+  border-color: #4285f4;
+}
+
+.btn-primary:hover {
+  background: #3367d6;
+  border-color: #3367d6;
+}
+
+.btn:disabled {
+  background: #dadce0;
+  color: #5f6368;
+  cursor: not-allowed;
+  border-color: #dadce0;
+}
+
+/* Loading States */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #5f6368;
+}
+
+.loading-text {
+  margin-left: 8px;
+}
+
+/* Empty States */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #5f6368;
+}
+
+.empty-state h3 {
+  color: #202124;
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  margin-bottom: 4px;
+}
+
+/* Error States */
+.error-state {
+  padding: 16px;
+  background: #fef7f0;
+  border: 1px solid #f9ab00;
+  border-radius: 8px;
+  color: #b06000;
+  margin: 16px 0;
+}
+
+/* Focus States */
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+/* Transitions */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

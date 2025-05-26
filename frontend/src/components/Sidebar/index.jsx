@@ -1,92 +1,60 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import UploadButton from './UploadButton';
-import DocumentList from './DocumentList';
-import PDFViewer from './PDFViewer';
-import '../../styles/Sidebar.css';
 
-function Sidebar({ onSelectDocument, selectedDocument }) {
-  const [documents, setDocuments] = useState([]);
-  const [selectedDocs, setSelectedDocs] = useState([]);
-  const [selectAll, setSelectAll] = useState(false);
-
-  useEffect(() => {
-    fetch('/api/documents')
-      .then((res) => res.json())
-      .then((data) => {
-        setDocuments(data.documents);
-        if (selectAll) {
-          setSelectedDocs(data.documents.map(doc => doc.id));
-        }
-      });
-  }, [selectAll]);
-
-  const handleDocumentSelect = (id) => {
-    const updatedSelection = selectedDocs.includes(id)
-      ? selectedDocs.filter(docId => docId !== id)
-      : [...selectedDocs, id];
-    setSelectedDocs(updatedSelection);
-    const selected = documents.find(doc => doc.id === id);
-    onSelectDocument(selected);
-  };
-
-  const toggleSelectAll = () => {
-    if (selectAll) {
-      setSelectedDocs([]);
-    } else {
-      setSelectedDocs(documents.map(doc => doc.id));
-    }
-    setSelectAll(!selectAll);
-  };
-
-  const handleDelete = async () => {
-    if (!selectedDocument) return;
-
-    try {
-      const response = await fetch(`/api/documents/${selectedDocument.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to delete document');
-
-      setDocuments(prev => prev.filter(doc => doc.id !== selectedDocument.id));
-      setSelectedDocs(prev => prev.filter(id => id !== selectedDocument.id));
-      onSelectDocument(null);
-    } catch (err) {
-      console.error('Delete error:', err);
-    }
-  };
-
+const Sidebar = ({ documents, selectedDoc, onSelectDoc, onUpload, onDelete }) => {
   return (
-    <div className="sidebar-container">
-      <h2 className="sidebar-header">Sources</h2>
-      <div className="sidebar-actions">
-        <UploadButton onUploadSuccess={() => window.location.reload()} />
-        <button className="delete-button" onClick={handleDelete} disabled={!selectedDocument}>
-          ❌ Supprimer
-        </button>
+    <div className="sidebar">
+      <div className="sidebar-header">
+        <h2>📚 Sources</h2>
+        <div className="sidebar-actions">
+          <UploadButton onUpload={onUpload} />
+          {selectedDoc && (
+            <button className="delete-btn" onClick={() => onDelete(selectedDoc.id)}>
+              🗑️ Delete
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="select-all">
-        <input
-          type="checkbox"
-          checked={selectAll}
-          onChange={toggleSelectAll}
-        /> Choisir toutes les sources
+      <div className="documents-list">
+        {documents.length === 0 ? (
+          <div className="empty-state">
+            <p>📄 No documents yet</p>
+            <p>Upload a PDF to get started</p>
+          </div>
+        ) : (
+          documents.map((doc) => (
+            <div
+              key={doc.id}
+              className={`document-item ${selectedDoc?.id === doc.id ? 'selected' : ''}`}
+              onClick={() => onSelectDoc(doc)}
+            >
+              <div className="doc-icon">📄</div>
+              <div className="doc-info">
+                <div className="doc-title">{doc.title}</div>
+                <div className="doc-meta">PDF Document</div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
-      <DocumentList
-        documents={documents}
-        selectedDocs={selectedDocs}
-        onDocumentSelect={handleDocumentSelect}
-      />
-
-      {selectedDocument && (
-        <div className="pdf-preview-container">
-          <PDFViewer pdfUrl={selectedDocument.storage_url} />
+      {selectedDoc && (
+        <div className="pdf-preview">
+          <h3>📖 Preview</h3>
+          <div className="pdf-viewer">
+            <iframe
+              src={selectedDoc.url}
+              title="PDF Preview"
+              width="100%"
+              height="100%"
+              style={{ border: '1px solid #e1e5e9', borderRadius: '8px' }}
+            />
+          </div>
         </div>
       )}
     </div>
   );
-}
+};
 
 export default Sidebar;

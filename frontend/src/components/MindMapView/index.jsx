@@ -1,112 +1,101 @@
-import { useState , useEffect } from 'react';
-import MindMap from './MindMap';
-import NotesEditor from './NotesEditor';
-import '../../styles/MindMapView.css';
+import React, { useState } from 'react';
 
-function jsonToMarkdown(node, level = 1) {
-  if (!node) return '';
-  const heading = `${'#'.repeat(level)} ${node.title || ''}`;
-  const children = Array.isArray(node.children)
-    ? node.children.map(child =>
-        typeof child === 'string'
-          ? `- ${child}`
-          : jsonToMarkdown(child, level + 1)
-      ).join('\n')
-    : '';
-  return `${heading}\n${children}`;
-}
-
-
-export default function MindMapView({ documentId }) {
-  const [mindMap, setMindMap] = useState(null);
-  const [notes, setNotes] = useState('');
+const MindMapView = ({ selectedDoc }) => {
+  const [mindMap, setMindMap] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-useEffect(() => {
-  console.log("📄 documentId in MindMapView:", documentId);
-}, [documentId]);
-
-
-const generateMindMap = async () => {
-  if (!documentId) {
-    setError('No document selected.');
-    return;
-  }
-
-  try {
-    setLoading(true);
-    setError(null);
-
-    const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/mindmap`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ document_ids: [documentId] }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  const generateMindMap = async () => {
+    if (!selectedDoc) {
+      alert('Please select a document first');
+      return;
     }
 
-    const data = await response.json();
-    console.log("🧠 Raw mindmap data:", data.mindmap);
-console.log("🧠 typeof data.mindmap:", typeof data.mindmap);
+    setLoading(true);
+    setError(null);
+    
+    // Simulate mind map generation
+    setTimeout(() => {
+      const sampleMindMap = `# ${selectedDoc.title} - Analysis
 
-try {
-  if (typeof data.mindmap === 'string') {
-    console.warn("⚠️ Received string instead of object, attempting parse.");
-    const safeResponse = data.mindmap
-      .replace(/(\w+):/g, '"$1":')
-      .replace(/'/g, '"')
-      .replace(/,(\s*[}\]])/g, '$1');
-    const parsed = JSON.parse(safeResponse);
-    setMindMap(jsonToMarkdown(parsed));
-  } else {
-    // ✅ It's already a JavaScript object
-    setMindMap(jsonToMarkdown(data.mindmap));
-  }
-} catch (err) {
-  console.error("❌ Final parse failure:", err, data.mindmap);
-  setMindMap("Invalid mind map format returned.");
-}
+## 📋 Key Concepts
+- Legal Framework Overview
+- Compliance Requirements
+- Risk Assessment Guidelines
+- Implementation Strategies
 
+## ⚖️ Legal Implications
+- Regulatory Compliance
+- Liability Considerations
+- Contractual Obligations
+- Dispute Resolution
 
-  } catch (err) {
-    console.error('MindMap generation error:', err);
-    setError('Failed to generate mind map. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+## 🎯 Action Items
+- Review Section 3.2
+- Update Policy Documents
+- Consult Legal Team
+- Schedule Compliance Audit
 
+## 📊 Risk Factors
+- **High Priority**: Regulatory changes
+- **Medium Priority**: Implementation timeline
+- **Low Priority**: Documentation updates`;
+
+      setMindMap(sampleMindMap);
+      setLoading(false);
+    }, 2000);
+  };
+
+  const renderMindMap = (text) => {
+    if (!text) return null;
+    
+    return text.split('\n').map((line, index) => {
+      if (line.startsWith('# ')) {
+        return <h1 key={index} className="mind-map-h1">{line.slice(2)}</h1>;
+      } else if (line.startsWith('## ')) {
+        return <h2 key={index} className="mind-map-h2">{line.slice(3)}</h2>;
+      } else if (line.startsWith('- ')) {
+        return <li key={index} className="mind-map-li">{line.slice(2)}</li>;
+      } else if (line.trim()) {
+        return <p key={index} className="mind-map-p">{line}</p>;
+      }
+      return <br key={index} />;
+    });
+  };
 
   return (
-    <div className="mind-map-view">
-      <div className="mind-map-header">
-        <h3>Mind Map Generator</h3>
-        <div className="mind-map-controls">
-          <button onClick={generateMindMap} disabled={loading}>
-            {loading ? 'Generating...' : 'Generate Mind Map'}
-          </button>
-          {error && <div className="mind-map-error">{error}</div>}
-        </div>
+    <div className="mindmap-container">
+      <div className="mindmap-header">
+        <h2>🧠 Mind Map Generator</h2>
+        <button 
+          onClick={generateMindMap}
+          disabled={!selectedDoc || loading}
+          className="generate-btn"
+        >
+          {loading ? '⏳ Generating...' : '✨ Generate Mind Map'}
+        </button>
       </div>
 
-      <div className="mind-map-content">
-        {mindMap ? (
-  <MindMap markdown={mindMap} />
-) : (
-  <div className="mind-map-placeholder">No mind map generated yet</div>
-)}
-
-      </div>
-
-      <div className="notes-section">
-        <h3>Notes</h3>
-        <NotesEditor notes={notes} onChange={setNotes} />
+      <div className="mindmap-content">
+        {loading ? (
+          <div className="mindmap-loading">
+            <div className="loading-spinner"></div>
+            <p>Analyzing document and generating mind map...</p>
+          </div>
+        ) : mindMap ? (
+          <div className="mindmap-display">
+            {renderMindMap(mindMap)}
+          </div>
+        ) : (
+          <div className="mindmap-empty">
+            <div className="empty-mindmap-icon">🧠</div>
+            <h3>Generate a Mind Map</h3>
+            <p>Select a document and click "Generate Mind Map" to create a visual overview of key concepts and insights.</p>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default MindMapView;

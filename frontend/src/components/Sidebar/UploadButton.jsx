@@ -1,38 +1,43 @@
-import React from 'react';
-import '../../styles/Sidebar.css';
+import React, { useRef, useState } from 'react';
 
-function UploadButton({ onUploadSuccess }) {
-  const handleUpload = async (e) => {
+const UploadButton = ({ onUpload }) => {
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
+    setUploading(true);
+    // Simulate upload
+    setTimeout(() => {
+      onUpload({ 
+        id: Date.now(), 
+        title: file.name, 
+        url: URL.createObjectURL(file) 
       });
-
-      if (!response.ok) throw new Error('Upload failed');
-      onUploadSuccess();
-    } catch (error) {
-      console.error('Upload error:', error);
-    }
+      setUploading(false);
+    }, 1000);
   };
 
   return (
-    <label className="ajouter-button">
-      ➕ Ajouter
+    <>
       <input
+        ref={fileInputRef}
         type="file"
-        accept="application/pdf"
-        onChange={handleUpload}
+        accept=".pdf"
+        onChange={handleFileSelect}
         style={{ display: 'none' }}
       />
-    </label>
+      <button 
+        className="upload-btn"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={uploading}
+      >
+        {uploading ? '⏳ Uploading...' : '📄 Add PDF'}
+      </button>
+    </>
   );
-}
+};
 
 export default UploadButton;

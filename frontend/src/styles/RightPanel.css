@@ -1,0 +1,159 @@
+/* Right Panel Container */
+.right-panel-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  border-bottom: 1px solid #e1e5e9;
+  background: #f8f9fa;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #5f6368;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  color: #202124;
+  background: rgba(66, 133, 244, 0.1);
+}
+
+.tab-button.active {
+  color: #4285f4;
+  border-bottom-color: #4285f4;
+  background: white;
+}
+
+.tab-icon {
+  font-size: 16px;
+}
+
+.tab-label {
+  font-weight: 500;
+}
+
+/* Tab Content */
+.tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Notes Container */
+.notes-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.notes-header {
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.notes-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #202124;
+  margin-bottom: 4px;
+}
+
+.notes-context {
+  font-size: 14px;
+  color: #5f6368;
+}
+
+.notes-editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.notes-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e1e5e9;
+  flex-shrink: 0;
+}
+
+.notes-stats {
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.notes-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.notes-textarea {
+  flex: 1;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 16px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+}
+
+.notes-textarea:focus {
+  border-color: #4285f4;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.notes-display {
+  flex: 1;
+  border: 1px dashed #dadce0;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: text;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-y: auto;
+  transition: border-color 0.2s;
+}
+
+.notes-display:hover {
+  border-color: #4285f4;
+}
+
+.notes-placeholder {
+  color: #5f6368;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .tab-label {
+    display: none;
+  }
+  
+  .tab-button {
+    padding: 12px;
+  }
+}
