@@ -85,7 +85,7 @@ const ChatBox = ({ selectedDoc }) => {
         <h2>💬 Chat with AI</h2>
         {selectedDoc && (
           <div className="chat-context">
-            Currently analyzing: <strong>{selectedDoc.title}</strong>
+            En analyse: <strong>{selectedDoc.title}</strong>
           </div>
         )}
       </div>
@@ -94,8 +94,8 @@ const ChatBox = ({ selectedDoc }) => {
         {messages.length === 0 ? (
           <div className="chat-empty">
             <div className="empty-chat-icon">💬</div>
-            <h3>Start a conversation</h3>
-            <p>Ask questions about your uploaded documents and get AI-powered insights.</p>
+            <h3>Commencez une Conversation </h3>
+            <p>Posez des questions sur vos documents téléchargés et obtenez des informations basées sur l'IA</p>
           </div>
         ) : (
           messages.map((msg, index) => (

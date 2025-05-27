@@ -20,10 +20,10 @@ const renderContent = () => {
         return (
           <div className="notes-container">
             <div className="notes-header">
-              <h2>📝 My Notes</h2>
+              <h2>📝 Mes Notes</h2>
               {selectedDoc && (
                 <div className="notes-context">
-                  Notes for: <strong>{selectedDoc.title}</strong>
+                  Notes pour: <strong>{selectedDoc.title}</strong>
                 </div>
               )}
             </div>

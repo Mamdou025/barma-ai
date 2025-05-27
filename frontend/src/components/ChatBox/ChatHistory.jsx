@@ -93,7 +93,7 @@ const ChatHistory = ({ documentId }) => {
             {isExpanded ? '📖' : '📚'}
           </span>
           <span className="toggle-text">
-            Chat History {logs.length > 0 && `(${logs.length} conversations)`}
+            Historique de chat {logs.length > 0 && `(${logs.length} conversations)`}
           </span>
           <span className="toggle-arrow">
             {isExpanded ? '▼' : '▶'}
@@ -106,11 +106,11 @@ const ChatHistory = ({ documentId }) => {
           {loading ? (
             <div className="history-loading">
               <div className="loading-spinner"></div>
-              <span>Loading previous conversations...</span>
+              <span>Chargement des dernieres conversations...</span>
             </div>
           ) : error ? (
             <div className="history-error">
-              <p className="error-message">❌ Failed to load history: {error}</p>
+              <p className="error-message">❌ Pas d'historique disponible : {error}</p>
               <button 
                 onClick={() => window.location.reload()} 
                 className="retry-btn"
@@ -121,13 +121,13 @@ const ChatHistory = ({ documentId }) => {
           ) : logs.length === 0 ? (
             <div className="history-empty">
               <div className="empty-icon">💬</div>
-              <p>No previous conversations</p>
-              <span>Start chatting to build your history!</span>
+              <p>Pas de conversations precedentes</p>
+              <span>Commencez a parlez </span>
             </div>
           ) : (
             <div className="history-messages">
               <div className="history-divider">
-                <span>Previous Conversations</span>
+                <span>Conversations precedentes</span>
               </div>
               {historyMessages.map((msg) => (
                 <div key={msg.id} className="history-message-wrapper">

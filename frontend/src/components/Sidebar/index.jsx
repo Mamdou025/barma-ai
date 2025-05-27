@@ -66,7 +66,7 @@ const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
         <div className="sidebar-header">
           <h2>📚 Sources</h2>
         </div>
-        <div className="loading">Loading documents...</div>
+        <div className="loading">Chargement des documents...</div>
       </div>
     );
   }
@@ -79,7 +79,7 @@ const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
           <UploadButton onUpload={handleUploadSuccess} />
           {selectedDoc && (
             <button className="delete-btn" onClick={handleDelete}>
-              🗑️ Delete
+              🗑️ Supprimer
             </button>
           )}
         </div>
@@ -101,8 +101,8 @@ const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
       <div className="documents-list">
         {documents.length === 0 ? (
           <div className="empty-state">
-            <p>📄 No documents yet</p>
-            <p>Upload a PDF to get started</p>
+            <p>📄 Pas encore de document </p>
+            <p>Téléchargez un PDF pour commencer</p>
           </div>
         ) : (
           documents.map((doc) => (
@@ -125,7 +125,7 @@ const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
 
       {selectedDoc && (
         <div className="pdf-preview">
-          <h3>📖 Preview</h3>
+          <h3>📖 aperçu</h3>
           <div className="pdf-viewer">
             <iframe
               src={selectedDoc.storage_url}

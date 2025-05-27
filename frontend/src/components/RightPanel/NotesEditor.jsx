@@ -112,8 +112,8 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
       <div className="notes-editor-container">
         <div className="notes-empty-state">
           <div className="empty-notes-icon">📝</div>
-          <h3>No Document Selected</h3>
-          <p>Select a document to start taking notes</p>
+          <h3>Pas de document choisi </h3>
+          <p>Sélectionnez un document pour commencer à prendre des notes</p>
         </div>
       </div>
     );
@@ -124,7 +124,7 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
       <div className="notes-editor-container">
         <div className="notes-loading">
           <div className="loading-spinner"></div>
-          <span>Loading notes...</span>
+          <span>Notes en chargement...</span>
         </div>
       </div>
     );
@@ -157,7 +157,7 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
                 className="btn"
                 disabled={saving}
               >
-                ❌ Cancel
+                ❌ Annuler
               </button>
             </>
           ) : (
@@ -194,7 +194,7 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
           />
           <div className="editor-help">
             <small>
-              💡 Auto-saves every 30 seconds • Press Ctrl+S to save manually
+              💡 Sauvegarde automatique toutes les 30 secondes • Appuyez sur Ctrl+S pour enregistrer manuellement
             </small>
           </div>
         </div>
@@ -214,7 +214,7 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
               <p>
                 {placeholder || 'Click to start taking notes about this document...'}
               </p>
-              <small>Your notes will be automatically saved</small>
+              <small>Vos notes seront automatiquement enregistrées</small>
             </div>
           )}
         </div>

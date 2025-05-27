@@ -69,7 +69,7 @@ const MindMapView = ({ selectedDoc }) => {
   return (
     <div className="mindmap-container">
       <div className="mindmap-header">
-        <h2>🧠 Mind Map Generator</h2>
+        <h2>🧠 Generateur de Resumé</h2>
         <button 
           onClick={generateMindMap}
           disabled={!selectedDoc || loading}
@@ -83,14 +83,14 @@ const MindMapView = ({ selectedDoc }) => {
         {loading ? (
           <div className="mindmap-loading">
             <div className="loading-spinner"></div>
-            <p>Analyzing document and generating mind map...</p>
+            <p>Creation du Résumé...</p>
           </div>
         ) : error ? (
           <div className="mindmap-error">
             <h3>❌ Error</h3>
             <p>{error}</p>
             <button onClick={generateMindMap} className="retry-btn">
-              🔄 Retry
+              🔄 Re-essayer
             </button>
           </div>
         ) : mindMap ? (
@@ -100,8 +100,8 @@ const MindMapView = ({ selectedDoc }) => {
         ) : (
           <div className="mindmap-empty">
             <div className="empty-mindmap-icon">🧠</div>
-            <h3>Generate a Mind Map</h3>
-            <p>Select a document and click "Generate Mind Map" to create a visual overview of key concepts and insights.</p>
+            <h3>Generer un résumé</h3>
+            <p>Sélectionnez un document et cliquez sur « Générer une carte mentale » pour créer un aperçu visuel des concepts et des idées clés.</p>
           </div>
         )}
       </div>

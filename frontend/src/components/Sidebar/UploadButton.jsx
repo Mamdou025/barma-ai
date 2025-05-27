@@ -54,7 +54,7 @@ const UploadButton = ({ onUpload }) => {
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
       >
-        {uploading ? '⏳ Uploading...' : '📄 Add PDF'}
+        {uploading ? '⏳ En chargement...' : '📄 Ajouter PDF'}
       </button>
     </>
   );
