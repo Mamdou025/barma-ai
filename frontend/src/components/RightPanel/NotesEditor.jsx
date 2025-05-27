@@ -1,5 +1,3 @@
-// frontend/src/components/RightPanel/NotesEditor.jsx - ENHANCED VERSION
-
 import React, { useState, useEffect } from 'react';
 import { api } from '../../utils/api';
 
@@ -13,7 +11,6 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
   const [error, setError] = useState(null);
   const [lastSaved, setLastSaved] = useState(null);
 
-  // Load notes when document changes
   useEffect(() => {
     const loadNotes = async () => {
       if (!documentId) {
@@ -25,17 +22,16 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
       try {
         setLoading(true);
         setError(null);
-        
+
         const result = await api.getNotes(documentId);
         const content = result.notes?.content || '';
-        
+
         setNotes(content);
         setLocalNotes(content);
-        
+
         if (result.notes?.updated_at) {
           setLastSaved(new Date(result.notes.updated_at));
         }
-        
       } catch (err) {
         console.error('Failed to load notes:', err);
         setError('Failed to load notes');
@@ -49,7 +45,6 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
     loadNotes();
   }, [documentId]);
 
-  // Update word count when local notes change
   useEffect(() => {
     const count = localNotes.trim() ? localNotes.split(/\s+/).length : 0;
     setWordCount(count);
@@ -64,39 +59,38 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
     try {
       setSaving(true);
       setError(null);
-      
-       const notesTitle = documentTitle 
-        ? `Notes: ${documentTitle}` 
+
+      const notesTitle = documentTitle
+        ? `Notes: ${documentTitle}`
         : `Notes for Document ${documentId.slice(0, 8)}...`;
-      await api.saveNotes(documentId, localNotes);
-      
-      setNotes(localNotes); // Update saved state
+
+      await api.saveNotes(documentId, localNotes, notesTitle);
+
+      setNotes(localNotes);
       setIsEditing(false);
       setLastSaved(new Date());
-      
     } catch (err) {
       console.error('Failed to save notes:', err);
       setError(err.message);
-      // Don't exit editing mode on error
     } finally {
       setSaving(false);
     }
   };
 
   const handleCancel = () => {
-    setLocalNotes(notes); // Revert to last saved version
+    setLocalNotes(notes);
     setIsEditing(false);
     setError(null);
   };
 
- const handleAutoSave = async () => {
+  const handleAutoSave = async () => {
     if (!documentId || localNotes === notes) return;
 
     try {
-      const notesTitle = documentTitle 
-        ? `Notes: ${documentTitle}` 
+      const notesTitle = documentTitle
+        ? `Notes: ${documentTitle}`
         : `Notes for Document ${documentId.slice(0, 8)}...`;
-        
+
       await api.saveNotes(documentId, localNotes, notesTitle);
       setNotes(localNotes);
       setLastSaved(new Date());
@@ -105,13 +99,12 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
     }
   };
 
-  // Auto-save every 30 seconds when editing
   useEffect(() => {
     if (!isEditing || !documentId) return;
 
     const autoSaveInterval = setInterval(handleAutoSave, 30000);
     return () => clearInterval(autoSaveInterval);
-  }, [isEditing, localNotes, documentId]);
+  }, [isEditing, localNotes, documentId, handleAutoSave]);
 
   if (!documentId) {
     return (
@@ -147,19 +140,19 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
             </span>
           )}
         </div>
-        
+
         <div className="notes-actions">
           {isEditing ? (
             <>
-              <button 
-                onClick={handleSave} 
+              <button
+                onClick={handleSave}
                 className="btn btn-primary"
                 disabled={saving}
               >
                 {saving ? '💾 Saving...' : '💾 Save'}
               </button>
-              <button 
-                onClick={handleCancel} 
+              <button
+                onClick={handleCancel}
                 className="btn"
                 disabled={saving}
               >
@@ -167,8 +160,8 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
               </button>
             </>
           ) : (
-            <button 
-              onClick={() => setIsEditing(true)} 
+            <button
+              onClick={() => setIsEditing(true)}
               className="btn"
               disabled={loading}
             >
@@ -181,10 +174,7 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
       {error && (
         <div className="notes-error">
           <span className="error-message">❌ {error}</span>
-          <button 
-            onClick={() => setError(null)} 
-            className="error-dismiss"
-          >
+          <button onClick={() => setError(null)} className="error-dismiss">
             ✕
           </button>
         </div>
@@ -196,32 +186,33 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
             className="notes-textarea"
             value={localNotes}
             onChange={(e) => setLocalNotes(e.target.value)}
-            placeholder={placeholder || "Start taking notes about this document..."}
+            placeholder={placeholder || 'Start taking notes about this document...'}
             autoFocus
             rows={20}
             disabled={saving}
           />
           <div className="editor-help">
-            <small>💡 Auto-saves every 30 seconds • Press Ctrl+S to save manually</small>
+            <small>
+              💡 Auto-saves every 30 seconds • Press Ctrl+S to save manually
+            </small>
           </div>
         </div>
       ) : (
-        <div 
-          className="notes-display"
-          onClick={() => setIsEditing(true)}
-        >
+        <div className="notes-display" onClick={() => setIsEditing(true)}>
           {notes ? (
             <div className="notes-content">
               {notes.split('\n').map((line, index) => (
                 <p key={index} className="notes-line">
-                  {line || '\u00A0'} {/* Non-breaking space for empty lines */}
+                  {line || '\u00A0'}
                 </p>
               ))}
             </div>
           ) : (
             <div className="notes-placeholder">
               <div className="placeholder-icon">📝</div>
-              <p>{placeholder || "Click to start taking notes about this document..."}</p>
+              <p>
+                {placeholder || 'Click to start taking notes about this document...'}
+              </p>
               <small>Your notes will be automatically saved</small>
             </div>
           )}

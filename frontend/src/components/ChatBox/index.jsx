@@ -8,7 +8,7 @@ const ChatBox = ({ selectedDoc }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [, setError] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
