@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../utils/api';
 
 const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
@@ -83,21 +83,22 @@ const NotesEditor = ({ documentId, placeholder, documentTitle }) => {
     setError(null);
   };
 
-  const handleAutoSave = async () => {
-    if (!documentId || localNotes === notes) return;
+ const handleAutoSave = useCallback(async () => {
+  if (!documentId || localNotes === notes) return;
 
-    try {
-      const notesTitle = documentTitle
-        ? `Notes: ${documentTitle}`
-        : `Notes for Document ${documentId.slice(0, 8)}...`;
+  try {
+    const notesTitle = documentTitle
+      ? `Notes: ${documentTitle}`
+      : `Notes for Document ${documentId.slice(0, 8)}...`;
 
-      await api.saveNotes(documentId, localNotes, notesTitle);
-      setNotes(localNotes);
-      setLastSaved(new Date());
-    } catch (err) {
-      console.error('Auto-save failed:', err);
-    }
-  };
+    await api.saveNotes(documentId, localNotes, notesTitle);
+    setNotes(localNotes);
+    setLastSaved(new Date());
+  } catch (err) {
+    console.error('Auto-save failed:', err);
+  }
+}, [documentId, localNotes, notes, documentTitle]);
+
 
   useEffect(() => {
     if (!isEditing || !documentId) return;
