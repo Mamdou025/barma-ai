@@ -1,3 +1,5 @@
+// frontend/src/components/RightPanel/index.jsx - UPDATED VERSION
+
 import React, { useState } from 'react';
 import ChatBox from '../ChatBox';
 import MindMapView from '../MindMapView';
@@ -5,7 +7,6 @@ import NotesEditor from './NotesEditor';
 
 const RightPanel = ({ selectedDoc }) => {
   const [activeTab, setActiveTab] = useState('chat');
-  const [notes, setNotes] = useState('');
 
   const tabs = [
     { id: 'chat', label: 'Chat', icon: '💬' },
@@ -13,10 +14,8 @@ const RightPanel = ({ selectedDoc }) => {
     { id: 'mindmap', label: 'Mind Map', icon: '🧠' }
   ];
 
-  const renderContent = () => {
+const renderContent = () => {
     switch (activeTab) {
-      case 'chat':
-        return <ChatBox selectedDoc={selectedDoc} />;
       case 'notes':
         return (
           <div className="notes-container">
@@ -29,14 +28,16 @@ const RightPanel = ({ selectedDoc }) => {
               )}
             </div>
             <NotesEditor 
-              notes={notes} 
-              onChange={setNotes}
+              documentId={selectedDoc?.id}
+              documentTitle={selectedDoc?.title} // Pass document title
               placeholder={selectedDoc ? `Write notes about ${selectedDoc.title}...` : "Select a document to start taking notes"}
             />
           </div>
         );
+        
       case 'mindmap':
         return <MindMapView selectedDoc={selectedDoc} />;
+        
       default:
         return <ChatBox selectedDoc={selectedDoc} />;
     }

@@ -32,6 +32,17 @@ const ChatBox = ({ selectedDoc }) => {
     setError(null);
     
     // Add user message to chat
+  console.log('=== SEND BUTTON CLICKED ===');
+  console.log('1. User message:', userMessage);
+  console.log('2. Selected document:', selectedDoc);
+  console.log('3. Selected document ID:', selectedDoc?.id);
+  console.log('4. Document IDs array:', [selectedDoc.id]);
+  console.log('5. About to call api.sendMessage with:', {
+    message: userMessage,
+    documentIds: [selectedDoc.id]
+  });
+  console.log('==============================');
+
     setMessages(prev => [...prev, { message: userMessage, isUser: true }]);
     setLoading(true);
 

@@ -1,6 +1,13 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const app = express();
+const port = process.env.PORT || 5000;
+
+console.log('🔧 Adding body parsing middleware...');
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
 
 const uploadRoute = require('./routes/upload');
 const chatRoute = require('./routes/chat');
@@ -14,8 +21,6 @@ const notesRoute = require('./routes/notes'); // 🆕 NEW
 
 
 
-const app = express();
-const port = process.env.PORT || 5000;
 
 
 app.use(cors());

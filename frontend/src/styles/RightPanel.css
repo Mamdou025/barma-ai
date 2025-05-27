@@ -82,26 +82,10 @@
   color: #5f6368;
 }
 
-.notes-editor-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
 
-.notes-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #e1e5e9;
-  flex-shrink: 0;
-}
 
-.notes-stats {
-  font-size: 12px;
-  color: #5f6368;
-}
+
+
 
 .notes-actions {
   display: flex;
@@ -146,7 +130,212 @@
   color: #5f6368;
   font-style: italic;
 }
+/* Add this to your frontend/src/styles/RightPanel.css */
 
+/* Enhanced Notes Editor Styles */
+.notes-editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.notes-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e1e5e9;
+  flex-shrink: 0;
+}
+
+.notes-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.word-count {
+  font-weight: 500;
+}
+
+.last-saved {
+  font-size: 11px;
+  color: #80868b;
+}
+
+
+/* Loading and Error States */
+.notes-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  color: #5f6368;
+}
+
+.notes-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fef7f0;
+  border: 1px solid #f9ab00;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  color: #b06000;
+  font-size: 14px;
+}
+
+.error-dismiss {
+  background: none;
+  border: none;
+  color: #b06000;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  margin-left: 12px;
+}
+
+.error-dismiss:hover {
+  background: rgba(176, 96, 0, 0.1);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Empty States */
+.notes-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: #5f6368;
+  padding: 40px;
+}
+
+.empty-notes-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.notes-empty-state h3 {
+  color: #202124;
+  margin-bottom: 8px;
+}
+
+/* Editor Styles */
+.notes-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+
+
+.notes-textarea:disabled {
+  background: #f8f9fa;
+  color: #5f6368;
+  cursor: not-allowed;
+}
+
+.editor-help {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.editor-help small {
+  color: #80868b;
+  font-size: 11px;
+}
+
+
+
+.notes-display:hover {
+  border-color: #4285f4;
+  border-style: solid;
+}
+
+.notes-content {
+  line-height: 1.6;
+  font-size: 14px;
+  color: #202124;
+}
+
+.notes-line {
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+}
+
+.notes-line:last-child {
+  margin-bottom: 0;
+}
+
+.notes-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: #5f6368;
+}
+
+.placeholder-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.notes-placeholder p {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #202124;
+}
+
+.notes-placeholder small {
+  font-size: 12px;
+  color: #80868b;
+}
+
+/* Button enhancements */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary:disabled {
+  background: #dadce0;
+  border-color: #dadce0;
+  color: #5f6368;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .notes-toolbar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .notes-stats {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .notes-actions {
+    justify-content: center;
+  }
+}
 /* Responsive adjustments */
 @media (max-width: 1200px) {
   .tab-label {

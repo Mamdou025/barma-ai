@@ -13,6 +13,16 @@ function cosineSimilarity(a, b) {
 }
 
 router.post('/chat', async (req, res) => {
+  console.log('🔥 BACKEND RECEIVED REQUEST:');
+  console.log('- Method:', req.method);
+  console.log('- URL:', req.url);
+  console.log('- Headers:', req.headers);
+  console.log('- Content-Type:', req.get('Content-Type'));
+  console.log('- Raw Body Type:', typeof req.body);
+  console.log('- Raw Body:', req.body);
+  console.log('- Body Keys:', req.body ? Object.keys(req.body) : 'NO BODY');
+  console.log('- Body Empty?', !req.body || Object.keys(req.body).length === 0);
+  console.log('🔥 END BACKEND REQUEST DEBUG');
   const { message, document_ids, session_id } = req.body;
   const startTime = Date.now();
   

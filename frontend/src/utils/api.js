@@ -53,8 +53,9 @@ export const api = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        message,
+        message: message  ,
         document_ids: documentIds, // Your backend expects this format
+        sessionid : "12122212"
       }),
     });
     
@@ -85,6 +86,50 @@ export const api = {
     
     return response.json();
   },
+
+   // Save or update notes for a document
+  saveNotes: async (documentId, content, title ) => {
+    console.log('💾 Saving notes for document:', documentId);
+    console.log('📝 Notes content:', content);
+    console.log('📝 Notes title:', title);
+
+    const response = await fetch(`${API_BASE_URL}/api/notes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        document_id: documentId,
+        content: content,
+         title: title || `Notes for Document ${documentId.slice(0, 8)}...` // Auto-generate title
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to save notes');
+    }
+    
+    const result = await response.json();
+    console.log('✅ Notes saved successfully:', result);
+    return result;
+  },
+
+  // Get notes for a document
+  getNotes: async (documentId) => {
+    console.log('📖 Loading notes for document:', documentId);
+
+    const response = await fetch(`${API_BASE_URL}/api/notes/${documentId}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to load notes');
+    }
+    
+    const result = await response.json();
+    console.log('✅ Notes loaded:', result);
+    return result;
+  },
 };
 
 // Helper function to format file size
@@ -110,3 +155,4 @@ export const validatePDFFile = (file) => {
   
   return true;
 };
+
