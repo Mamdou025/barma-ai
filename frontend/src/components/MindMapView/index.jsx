@@ -3,7 +3,6 @@ import { api } from '../../utils/api';
 
 // 
 import fil001 from '../../icons/fil/fil001.svg' ;
-import abs013 from '../../icons/abs/abs013.svg' ;
 
 
 

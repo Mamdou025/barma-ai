@@ -27,7 +27,7 @@ const renderContent = () => {
         return (
           <div className="notes-container">
             <div className="notes-header">
-              <h2><img src={art005} /> Mes Notes</h2>
+              <h2><img src={art005} alt="duotone" /> Mes Notes</h2>
               {selectedDoc && (
                 <div className="notes-context">
                   Notes pour: <strong>{selectedDoc.title}</strong>
