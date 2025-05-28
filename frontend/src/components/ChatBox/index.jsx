@@ -84,7 +84,7 @@ const ChatBox = ({ selectedDoc }) => {
     <div className="chat-container">
       <div className="chat-header">
         <ChatHistory documentId={selectedDoc?.id} />
-        <h2> <img src={com003} /> Discutez avec l'IA</h2>
+        <h2> <img src={com003} alt="chaticon" /> Discutez avec l'IA</h2>
         {selectedDoc && (
           <div className="chat-context">
             En analyse: <strong>{selectedDoc.title}</strong>
@@ -95,7 +95,7 @@ const ChatBox = ({ selectedDoc }) => {
       <div className="chat-messages">
         {messages.length === 0 ? (
           <div className="chat-empty">
-            <div className="empty-chat-icon"><img src={com003} /></div>
+            <div className="empty-chat-icon"><img src={com003} alt=" chaticon"  /></div>
             <h3>Commencez une Conversation </h3>
             <p>Posez des questions sur vos documents téléchargés et obtenez des informations basées sur l'IA</p>
           </div>

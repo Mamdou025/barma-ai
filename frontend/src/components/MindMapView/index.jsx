@@ -75,7 +75,7 @@ const MindMapView = ({ selectedDoc }) => {
   return (
     <div className="mindmap-container">
       <div className="mindmap-header">
-        <h2>  <img src={fil001} /> Generateur de Resumé</h2>
+        <h2>  <img src={fil001}  alt="fil " /> Generateur de Resumé</h2>
         <button 
           onClick={generateMindMap}
           disabled={!selectedDoc || loading}
@@ -105,7 +105,7 @@ const MindMapView = ({ selectedDoc }) => {
           </div>
         ) : (
           <div className="mindmap-empty">
-            <div className="empty-mindmap-icon"><img src={fil001} /></div>
+            <div className="empty-mindmap-icon"><img src={fil001} alt="art "  /></div>
             <h3>Generer un résumé</h3>
             <p>Sélectionnez un document et cliquez sur « Générer une carte mentale » pour créer un aperçu visuel des concepts et des idées clés.</p>
           </div>

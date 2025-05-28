@@ -16,9 +16,9 @@ const RightPanel = ({ selectedDoc }) => {
   const [activeTab, setActiveTab] = useState('chat');
 
   const tabs = [
-    { id: 'chat', label: 'Chat', icon: <img src={com003} />},
-    { id: 'notes', label: 'Notes', icon: <img src={art005} />},
-    { id: 'mindmap', label: 'Résumé', icon: <img src={fil001} /> }
+    { id: 'chat', label: 'Chat', icon: <img src={com003} alt="chaticon "  />},
+    { id: 'notes', label: 'Notes', icon: <img src={art005} alt="art "  />},
+    { id: 'mindmap', label: 'Résumé', icon: <img src={fil001} alt="resume "  /> }
   ];
 
 const renderContent = () => {
