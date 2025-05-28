@@ -112,7 +112,7 @@ const ChatBox = ({ selectedDoc }) => {
         
         {loading && (
           <div className="message ai-message">
-            <div className="message-avatar">🤖</div>
+            <div className="message-avatar">🟢</div>
             <div className="message-content">
               <div className="typing-indicator">
                 <span></span>

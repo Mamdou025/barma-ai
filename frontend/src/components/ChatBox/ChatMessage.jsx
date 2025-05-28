@@ -18,7 +18,7 @@ const ChatMessage = ({ message, isUser, timestamp, isHistory = false }) => {
   return (
     <div className={`message ${isUser ? 'user-message' : 'ai-message'} ${isHistory ? 'history-message' : ''}`}>
       <div className="message-avatar">
-        {isUser ? '👤' : '🤖'}
+        {isUser ? '👤' : '🟢'}
       </div>
       <div className="message-content">
         <div className="message-text">{message}</div>
