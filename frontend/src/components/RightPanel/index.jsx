@@ -5,13 +5,20 @@ import ChatBox from '../ChatBox';
 import MindMapView from '../MindMapView';
 import NotesEditor from './NotesEditor';
 
+import com003 from '../../icons/com/com003.svg' ;
+import art005 from '../../icons/art/art005.svg' ;
+import fil001 from '../../icons/fil/fil001.svg' ;
+
+
+
+
 const RightPanel = ({ selectedDoc }) => {
   const [activeTab, setActiveTab] = useState('chat');
 
   const tabs = [
-    { id: 'chat', label: 'Chat', icon: '💬' },
-    { id: 'notes', label: 'Notes', icon: '📝' },
-    { id: 'mindmap', label: 'Mind Map', icon: '🧠' }
+    { id: 'chat', label: 'Chat', icon: <img src={com003} />},
+    { id: 'notes', label: 'Notes', icon: <img src={art005} />},
+    { id: 'mindmap', label: 'Résumé', icon: <img src={fil001} /> }
   ];
 
 const renderContent = () => {
@@ -20,7 +27,7 @@ const renderContent = () => {
         return (
           <div className="notes-container">
             <div className="notes-header">
-              <h2>📝 Mes Notes</h2>
+              <h2><img src={art005} /> Mes Notes</h2>
               {selectedDoc && (
                 <div className="notes-context">
                   Notes pour: <strong>{selectedDoc.title}</strong>
@@ -30,7 +37,7 @@ const renderContent = () => {
             <NotesEditor 
               documentId={selectedDoc?.id}
               documentTitle={selectedDoc?.title} // Pass document title
-              placeholder={selectedDoc ? `Write notes about ${selectedDoc.title}...` : "Select a document to start taking notes"}
+              placeholder={selectedDoc ? `Écrire des notes sur ${selectedDoc.title}...` : "Sélectionnez un document pour commencer à prendre des notes"}
             />
           </div>
         );

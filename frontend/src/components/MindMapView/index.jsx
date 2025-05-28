@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { api } from '../../utils/api';
 
+// 
+import fil001 from '../../icons/fil/fil001.svg' ;
+import abs013 from '../../icons/abs/abs013.svg' ;
+
+
+
 const MindMapView = ({ selectedDoc }) => {
   const [mindMap, setMindMap] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -69,13 +75,13 @@ const MindMapView = ({ selectedDoc }) => {
   return (
     <div className="mindmap-container">
       <div className="mindmap-header">
-        <h2>🧠 Generateur de Resumé</h2>
+        <h2>  <img src={fil001} /> Generateur de Resumé</h2>
         <button 
           onClick={generateMindMap}
           disabled={!selectedDoc || loading}
           className="generate-btn"
         >
-          {loading ? '⏳ Generating...' : '✨ Generate Mind Map'}
+          {loading ? '⏳ Generating...' : 'Generer un résumé'}
         </button>
       </div>
 
@@ -99,7 +105,7 @@ const MindMapView = ({ selectedDoc }) => {
           </div>
         ) : (
           <div className="mindmap-empty">
-            <div className="empty-mindmap-icon">🧠</div>
+            <div className="empty-mindmap-icon"><img src={fil001} /></div>
             <h3>Generer un résumé</h3>
             <p>Sélectionnez un document et cliquez sur « Générer une carte mentale » pour créer un aperçu visuel des concepts et des idées clés.</p>
           </div>

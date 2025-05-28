@@ -16,7 +16,7 @@ const App = () => {
   };
 
   const handleDelete = (docId) => {
-    if (window.confirm('Are you sure you want to delete this document?')) {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce document?')) {
       setDocuments(prev => prev.filter(doc => doc.id !== docId));
       if (selectedDoc?.id === docId) {
         setSelectedDoc(null);
