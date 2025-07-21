@@ -81,7 +81,7 @@ Vous pouvez utiliser un raisonnement général, mais toutes les conclusions juri
 
 Répondez uniquement aux questions en utilisant le contexte extrait des documents sources vérifiés.
 
-Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'inventez jamais d'informations juridiques.`
+Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'inventez jamais d'informations juridiques.` // contenu des instructions 
         },
         {
           role: 'user',
