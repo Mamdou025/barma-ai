@@ -1,4 +1,65 @@
 PAN_rules:
-  - "All responses must reference provided context."
-  - "Do not fabricate legal sources."
-  - "Answer concisely and in French."
+  ignore_tags: ["PAN"]
+  opposing_articles:
+    structure: ["Bloc A", "Bloc B", "Bloc C"]
+    connector: ["Cependant", "Tandis que", "En contradiction avec"]
+  norm_hierarchy:
+    split_on: ["Constitution", "Traité", "Loi nationale"]
+    blocks: ["Bloc 1: Constitution", "Bloc 2: Convention", "Bloc 3: Effets sur la loi"]
+  article_79:
+    trigger: "article 79"
+    phrases:
+      - "Selon l'article 79 de la Constitution du Sénégal..."
+      - "Les traités régulièrement ratifiés ont une autorité supérieure à celle de la loi."
+      - "En conséquence, dans cette affaire..."
+  semantic_density:
+    max_words_per_block: 80
+    force_split: true
+  single_idea_per_paragraph: true
+  conventionality_control:
+    trigger_keywords: ["traité", "loi écartée"]
+    structure:
+      - "Bloc 1: Conflit norme nationale vs traité"
+      - "Bloc 2: Rappel article 79"
+      - "Bloc 3: Effet juridique"
+      - "Bloc 4: Qualification doctrinale"
+    implicit_tag_conditions: ["traité appliqué", "loi écartée", "pas de mot 'contrôle'"]
+    auto_definition: "Le contrôle de conventionnalité est le mécanisme par lequel un juge..."
+  visual_formatting:
+    titles: ["Analyse", "Conséquence juridique", "Qualification doctrinale"]
+    line_breaks_between_steps: true
+  jurisprudence_summary:
+    format:
+      - "**Faits**"
+      - "**Question juridique**"
+      - "**Solution**"
+      - "**Portée**"
+    word_limits:
+      Faits: 60
+      Question: 30
+      Solution: 80
+      Portée: 100
+  style_cleaning:
+    replacements:
+      "décision importante": "décision affirmant le principe selon lequel"
+      "affaire sensible": "affaire relevant du régime spécial"
+  vulgarisation_trigger:
+    keywords: ["parent", "non-juriste", "simple", "expliquer", "justiciable"]
+    structure:
+      - "Ce qui s’est passé"
+      - "Ce que la loi prévoit"
+      - "Ce que le juge a décidé"
+    length_limit:
+      max_sentences: 3
+      max_words_per_sentence: 20
+  exceptions_handling:
+    keywords: ["Toutefois", "à condition que", "sauf si", "exception"]
+    structure: ["Infraction", "Exception", "Conditions"]
+    list_format_on_multiple_conditions: true
+  summary_format_for_notes:
+    format: ["Interdiction", "Exception", "Conditions"]
+  conditional_sanctions_format:
+    structure: ["Infraction de base → Sanction", "Si condition → Sanction aggravée"]
+  automatic_reference_notice:
+    if_reference: "article précédent"
+    insert: "Sanction : les peines applicables sont celles mentionnées à l’article 1"
