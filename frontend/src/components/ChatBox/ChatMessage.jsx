@@ -1,6 +1,5 @@
-// frontend/src/components/ChatBox/ChatMessage.jsx - Updated to handle history
-
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 
 const ChatMessage = ({ message, isUser, timestamp, isHistory = false }) => {
   const formatTime = (timestamp) => {
@@ -21,7 +20,11 @@ const ChatMessage = ({ message, isUser, timestamp, isHistory = false }) => {
         {isUser ? '👤' : '🟢'}
       </div>
       <div className="message-content">
-        <div className="message-text">{message}</div>
+        <div className="message-text">
+          <ReactMarkdown>
+            {message}
+          </ReactMarkdown>
+        </div>
         <div className="message-time">
           {isHistory && <span className="history-indicator">📚 </span>}
           {formatTime(timestamp)}
