@@ -78,18 +78,22 @@ router.post('/chat', async (req, res) => {
       ? (Array.isArray(rules.PAN_rules) ? rules.PAN_rules.join('\n') : String(rules.PAN_rules))
       : '';
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: `${rulesText}\n\nVous êtes un assistant juridique formé pour répondre aux questions de manière claire et précise.
+    const systemPrompt = rules && rules.system_prompt
+      ? String(rules.system_prompt)
+      : `Vous êtes un assistant juridique formé pour répondre aux questions de manière claire et précise.
 
 Vous pouvez utiliser un raisonnement général, mais toutes les conclusions juridiques doivent être fondées sur les documents juridiques fournis.
 
 Répondez uniquement aux questions en utilisant le contexte extrait des documents sources vérifiés.
 
-Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'inventez jamais d'informations juridiques.`
+Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'inventez jamais d'informations juridiques.`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: `${rulesText}\n\n${systemPrompt}`
         },
         {
           role: 'user',
