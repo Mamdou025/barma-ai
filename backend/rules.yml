@@ -72,3 +72,6 @@ PAN_rules:
   automatic_reference_notice:
     if_reference: "article précédent"
     insert: "Sanction : les peines applicables sont celles mentionnées à l’article 1"
+  special_word_response:
+    trigger: "cococo"
+    reply: "12345"
