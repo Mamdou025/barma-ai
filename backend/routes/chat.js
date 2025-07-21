@@ -1,6 +1,10 @@
 const express = require('express');
 const openai = require('../utils/openaiClient');
 const { supabase } = require('../utils/supabaseClient');
+const { getRules } = require('../utils/rulesLoader');
+
+// Load PAN rules once at startup
+const rules = getRules();
 
 const router = express.Router();
 
@@ -70,18 +74,22 @@ router.post('/chat', async (req, res) => {
     const contextText = topChunks.map(c => `Chunk ${c.chunk_index}:\n${c.content}`).join('\n\n');
 
     // 5. Send to OpenAI with selected context
+    const rulesText = rules && rules.PAN_rules
+      ? (Array.isArray(rules.PAN_rules) ? rules.PAN_rules.join('\n') : String(rules.PAN_rules))
+      : '';
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
-          content: `Vous êtes un assistant juridique formé pour répondre aux questions de manière claire et précise.
+          content: `${rulesText}\n\nVous êtes un assistant juridique formé pour répondre aux questions de manière claire et précise.
 
 Vous pouvez utiliser un raisonnement général, mais toutes les conclusions juridiques doivent être fondées sur les documents juridiques fournis.
 
 Répondez uniquement aux questions en utilisant le contexte extrait des documents sources vérifiés.
 
-Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'inventez jamais d'informations juridiques.` // contenu des instructions 
+Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'inventez jamais d'informations juridiques.`
         },
         {
           role: 'user',
