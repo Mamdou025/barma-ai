@@ -1,0 +1,4 @@
+PAN_rules:
+  - "All responses must reference provided context."
+  - "Do not fabricate legal sources."
+  - "Answer concisely and in French."
