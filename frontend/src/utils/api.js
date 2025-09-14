@@ -53,9 +53,9 @@ export const api = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        message: message  ,
+        message: message,
         document_ids: documentIds, // Your backend expects this format
-        sessionid : "12122212"
+        session_id: "12122212",
       }),
     });
     
