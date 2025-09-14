@@ -1,15 +1,13 @@
 // services/embedding.js
 
-import { OpenAI } from 'openai';
-import { supabase } from '../utils/supabaseClient.js';
-import { chunkText } from './chunking.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
+const { OpenAI } = require('openai');
+const { supabase } = require('../utils/supabaseClient.js');
+const { chunkText } = require('./chunkings.js');
+require('dotenv').config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export async function embedAndStoreChunks(documentId, text) {
+async function embedAndStoreChunks(documentId, text) {
   const chunks = chunkText(text);
 
   for (let i = 0; i < chunks.length; i++) {
@@ -39,7 +37,7 @@ export async function embedAndStoreChunks(documentId, text) {
   console.log(`✅ Stored ${chunks.length} chunks for document ${documentId}`);
 }
 
-export async function embedAndStoreSegments(segments, { supabase }) {
+async function embedAndStoreSegments(segments, { supabase }) {
   let hasVector = false;
   try {
     const { data, error } = await supabase
@@ -95,3 +93,8 @@ export async function embedAndStoreSegments(segments, { supabase }) {
 
   console.log(`✅ Stored ${storedSegments} segments`);
 }
+
+module.exports = {
+  embedAndStoreChunks,
+  embedAndStoreSegments
+};
