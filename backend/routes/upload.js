@@ -6,34 +6,16 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const pdfParse = require('pdf-parse');
-const openai = require('../utils/openaiClient');
 const { supabase } = require('../utils/supabaseClient');
+const regexes = require('../utils/regexes');
+const graphBuilder = require('../utils/graphBuilder');
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
-function splitTextIntoChunks(text, maxWords = 500) {
-  const sentences = text.split(/(?<=[.?!])\s+/);
-  const chunks = [];
-  let chunk = [];
-
-  for (const sentence of sentences) {
-    const words = sentence.split(/\s+/);
-    const chunkWords = chunk.join(' ').split(/\s+/).length;
-
-    if ((chunkWords + words.length) > maxWords) {
-      chunks.push(chunk.join(' '));
-      chunk = [];
-    }
-    chunk.push(sentence);
-  }
-
-  if (chunk.length > 0) {
-    chunks.push(chunk.join(' '));
-  }
-
-  return chunks;
-}
+// Preload ESM services using dynamic import
+const chunkingsPromise = import('../services/chunkings.js');
+const embeddingPromise = import('../services/embedding.js');
 
 router.post('/upload', upload.single('file'), async (req, res) => {
   const file = req.file;
@@ -42,18 +24,36 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     const dataBuffer = fs.readFileSync(file.path);
     const parsedData = await pdfParse(dataBuffer);
-    const chunks = splitTextIntoChunks(parsedData.text, 500);
+    const headerSample = parsedData.text.slice(0, 200);
 
     console.log(`✅ Extracted text from ${file.originalname}:\n`);
-    console.log(parsedData.text.slice(0, 500));
+    console.log(headerSample);
 
-    // 🔐 Generate a unique filename for storage
+    // Detect document family
+    let family = 'statute';
+    const { statutes, regulations, judgments, doctrine, publicReports } = regexes;
+    if (regulations.visa.test(headerSample) || regulations.considerants.test(headerSample)) {
+      family = 'regulation';
+    } else if (
+      judgments.headings.facts.test(headerSample) ||
+      judgments.neutralCitation.test(headerSample)
+    ) {
+      family = 'judgment';
+    } else if (doctrine.resume.test(headerSample)) {
+      family = 'doctrine';
+    } else if (publicReports.executiveSummary.test(headerSample)) {
+      family = 'public_report';
+    } else if (statutes.articleMarker.test(headerSample)) {
+      family = 'statute';
+    }
+
+    // Generate a unique filename for storage
     const fileExt = path.extname(file.originalname);
     const uniqueFilename = `${crypto.randomUUID()}${fileExt}`;
 
-    // 🔼 Upload file to Supabase Storage
+    // Upload file to Supabase Storage
     const { error: uploadErr } = await supabase.storage
-      .from('pdfs') // <-- your bucket name
+      .from('pdfs')
       .upload(uniqueFilename, dataBuffer, {
         contentType: file.mimetype,
       });
@@ -63,24 +63,23 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(500).json({ error: 'Failed to upload file to storage' });
     }
 
-    // 🌐 Get the public URL
-    const { data: publicURLData } = supabase
-      .storage
+    // Get the public URL
+    const { data: publicURLData } = supabase.storage
       .from('pdfs')
       .getPublicUrl(uniqueFilename);
 
     const publicURL = publicURLData.publicUrl;
 
-    // 📝 Insert document metadata into the database
+    // Insert document metadata into the database
     const { data: docInsert, error: insertErr } = await supabase
-      .from('documents') // ✅ this is your DB table
+      .from('documents')
       .insert([
         {
           title: file.originalname,
           filename: uniqueFilename,
           storage_url: publicURL,
-          text_content: parsedData.text
-        }
+          text_content: parsedData.text,
+        },
       ])
       .select()
       .single();
@@ -90,39 +89,61 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(500).json({ error: 'Failed to store document' });
     }
 
-    // 🧠 Store chunks + embeddings
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
+    // Dynamically load cutters and embedding service
+    const {
+      cutStatute,
+      cutRegulation,
+      cutJudgment,
+      cutDoctrine,
+      cutPublicReport,
+    } = await chunkingsPromise;
+    const { embedAndStoreSegments } = await embeddingPromise;
 
-      const embeddingResponse = await openai.embeddings.create({
-        model: 'text-embedding-3-small',
-        input: chunk,
-        encoding_format: 'float'
-      });
+    const meta = { doc_id: docInsert.id, type: family };
+    let segments = [];
+    switch (family) {
+      case 'regulation':
+        segments = cutRegulation(parsedData.text, meta);
+        break;
+      case 'judgment':
+        segments = cutJudgment(parsedData.text, meta);
+        break;
+      case 'doctrine':
+        segments = cutDoctrine(parsedData.text, meta);
+        break;
+      case 'public_report':
+        segments = cutPublicReport(parsedData.text, meta);
+        break;
+      case 'statute':
+      default:
+        segments = cutStatute(parsedData.text, meta);
+        break;
+    }
 
-      const embedding = embeddingResponse.data[0].embedding;
+    segments = segments.map((s) => ({ ...s, document_id: s.doc_id }));
 
-      const { error: chunkErr } = await supabase
-        .from('chunks')
-        .insert([
-          {
-            document_id: docInsert.id,
-            chunk_index: i,
-            content: chunk,
-            embedding: embedding
-          }
-        ]);
+    await embedAndStoreSegments(segments, { supabase });
 
-      if (chunkErr) {
-        console.error(`❌ Failed to insert chunk ${i}:`, chunkErr.message);
-      }
+    const { edges, unresolved } = graphBuilder.extractAndBuildEdges(segments);
+    await graphBuilder.persistEdges(edges, { supabase });
+    if (unresolved.length) {
+      console.log('⚠️ Unresolved edges:', unresolved.length);
     }
 
     fs.unlinkSync(file.path);
-    res.json({ 
-      message: 'PDF parsed, embedded, and uploaded successfully', 
-      public_url: publicURL, 
-      chunks: chunks.length 
+
+    const typesDetected = [...new Set(segments.map((s) => s.type))];
+    const rolesCount = segments.reduce((acc, seg) => {
+      acc[seg.role] = (acc[seg.role] || 0) + 1;
+      return acc;
+      }, {});
+
+    res.json({
+      message: 'PDF parsed, segmented, embedded, and uploaded successfully',
+      public_url: publicURL,
+      segments_count: segments.length,
+      types_detected: typesDetected,
+      roles_count: rolesCount,
     });
 
   } catch (err) {
@@ -131,4 +152,4 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-module.exports =  router;
+module.exports = router;
