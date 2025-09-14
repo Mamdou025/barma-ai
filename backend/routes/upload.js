@@ -5,7 +5,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const pdfParse = require('pdf-parse');
+const { extractTextWithHelpers } = require('../utils/pdfHelpers');
 const { supabase } = require('../utils/supabaseClient');
 const regexes = require('../utils/regexes');
 const graphBuilder = require('../utils/graphBuilder');
@@ -23,7 +23,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
   try {
     const dataBuffer = fs.readFileSync(file.path);
-    const parsedData = await pdfParse(dataBuffer);
+    const parsedData = await extractTextWithHelpers(dataBuffer);
     const headerSample = parsedData.text.slice(0, 200);
 
     console.log(`✅ Extracted text from ${file.originalname}:\n`);
