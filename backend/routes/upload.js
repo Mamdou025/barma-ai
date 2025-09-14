@@ -23,6 +23,15 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
   try {
     const dataBuffer = fs.readFileSync(file.path);
+    const hasPDFHeader = dataBuffer.slice(0, 4).toString() === '%PDF';
+    const isPDFMime = file.mimetype === 'application/pdf';
+    if (!hasPDFHeader || !isPDFMime) {
+      fs.unlinkSync(file.path);
+      return res
+        .status(400)
+        .json({ error: 'Invalid or corrupted PDF file' });
+    }
+
     const parsedData = await extractTextWithHelpers(dataBuffer);
     const headerSample = parsedData.text.slice(0, 200);
 
