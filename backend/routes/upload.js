@@ -33,7 +33,18 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         .json({ error: 'Invalid or corrupted PDF file' });
     }
 
-    const parsedData = await extractTextWithHelpers(dataBuffer);
+    let parsedData;
+    try {
+      parsedData = await extractTextWithHelpers(dataBuffer);
+    } catch (err) {
+      fs.unlinkSync(file.path);
+      if (err.message === 'Invalid PDF structure') {
+        console.error('❌ PDF parse error: Invalid PDF structure');
+        return res.status(400).json({ error: 'Invalid PDF structure' });
+      }
+      console.error('❌ PDF parse error:', err);
+      return res.status(500).json({ error: 'Failed to parse and embed PDF' });
+    }
     const headerSample = parsedData.text.slice(0, 200);
 
     console.log(`✅ Extracted text from ${file.originalname}:\n`);
@@ -157,10 +168,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     });
 
   } catch (err) {
-    if (err.message === 'Invalid PDF structure') {
-      console.error('❌ PDF parse error: Invalid PDF structure');
-      return res.status(400).json({ error: 'Invalid PDF structure' });
-    }
+    fs.unlinkSync(file.path);
     console.error('❌ PDF parse error:', err);
     res.status(500).json({ error: 'Failed to parse and embed PDF' });
   }
