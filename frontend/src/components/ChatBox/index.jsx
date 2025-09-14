@@ -85,8 +85,13 @@ const ChatBox = ({ selectedDoc }) => {
       setError(err.message);
 
       let errorMessage = err.message;
-      if (errorMessage === 'No document selected or document not indexed') {
-        errorMessage += '. Please re-select or re-ingest the PDF.';
+      if (errorMessage === 'No document selected') {
+        errorMessage = 'No document selected. Please choose a document.';
+        toast.error(errorMessage);
+      } else if (errorMessage === 'Document not indexed') {
+        errorMessage += '. Please re-ingest the PDF.';
+        toast.error(errorMessage);
+      } else {
         toast.error(errorMessage);
       }
 

@@ -22,9 +22,7 @@ router.post('/chat', async (req, res) => {
 
   try {
     if (!Array.isArray(document_ids) || document_ids.length === 0) {
-      return res
-        .status(400)
-        .json({ error: 'No document selected or document not indexed' });
+      return res.status(400).json({ error: 'No document selected' });
     }
 
     // 1. Chargement des règles PAN
@@ -58,9 +56,7 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
       });
 
       if (!segments || segments.length === 0) {
-        return res
-          .status(400)
-          .json({ error: 'No document selected or document not indexed' });
+        return res.status(404).json({ error: 'Document not indexed' });
       }
 
       const contextText = segments
@@ -95,9 +91,7 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
       }
 
       if (!allChunks || allChunks.length === 0) {
-        return res
-          .status(400)
-          .json({ error: 'No document selected or document not indexed' });
+        return res.status(404).json({ error: 'Document not indexed' });
       }
 
       // 4. Similarité cosinus
@@ -115,9 +109,7 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
         .slice(0, 5);
 
       if (topChunks.length === 0) {
-        return res
-          .status(400)
-          .json({ error: 'No document selected or document not indexed' });
+        return res.status(404).json({ error: 'Document not indexed' });
       }
 
       const contextText = topChunks
