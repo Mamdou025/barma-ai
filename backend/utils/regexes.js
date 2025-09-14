@@ -39,8 +39,12 @@ const publicReports = {
   observations: /\b(?:Observations|Constats|Findings)\b/i,
   responses: /\b(?:Réponses|Responses)\b/i,
   recommendations: /\b(?:Recommandations|Recommendations)\b/i,
-  amount: /\b\d{1,3}(?:[ .,\u00A0]\d{3})*(?:[.,]\d{2})?\s*(?:€|EUR|euro[s]?|USD|\$)\b/gi,
-  procurement: /\b(?:marché[s]? public[s]?|procurement|tender|contrat[s]?)\b/i
+  observationCue: /\b(?:observation(?:s)?|constat(?:s)?|finding(?:s)?|nous avons observé)\b/i,
+  recommendationCue: /\b(?:recommandation(?:s)?|recommendation(?:s)?|nous recommandons|il est recommandé)\b/i,
+  responseCue: /\b(?:réponse(?:s)?|responses?|management response|commentaire[s]? du minist(?:è|e)re)\b/i,
+  amount: /\b\d{1,3}(?:[ .,\u00A0]\d{3})*(?:[.,]\d+)?\s*(?:k|m|million(?:s)?|thousand(?:s)?|€|eur|euro[s]?|usd|\$)\b/gi,
+  procurement: /\b(?:march[ée]s? public[s]?|appel d'offres|procurement|tender|contrat[s]?|acquisition[s]?|purchase[s]?|bid[s]?)\b/i,
+  periodRange: /\b(?:jan(?:vier)?|f[eé]v(?:rier)?|mar(?:s|ch)|avr(?:il)?|mai|jun(?:e)?|jul(?:y|let)|ao[uû]t|aug(?:ust)?|sep(?:t\.?|tember)?|oct(?:obre)?|nov(?:embre)?|d[ée]c(?:embre)?|\d{1,2})?\s*\d{4}\s*(?:-|–|to|au)\s*(?:jan(?:vier)?|f[eé]v(?:rier)?|mar(?:s|ch)|avr(?:il)?|mai|jun(?:e)?|jul(?:y|let)|ao[uû]t|aug(?:ust)?|sep(?:t\.?|tember)?|oct(?:obre)?|nov(?:embre)?|d[ée]c(?:embre)?|\d{1,2})?\s*\d{4}\b/gi
 };
 
 // Generic regex helpers
@@ -82,6 +86,31 @@ function normalizeCurrencyAmount(input) {
   return Number(numeric);
 }
 
+function normalizeEntityName(input) {
+  if (!input) return '';
+  return input
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+const headingRoleRegexes = {
+  observation: /\b(?:observation(?:s)?|constat(?:s)?|finding(?:s)?|observations?)\b/i,
+  recommendation: /\b(?:recommandation(?:s)?|recommendation(?:s)?|nous recommandons|il est recommandé)\b/i,
+  response: /\b(?:réponse(?:s)?|responses?|management response|commentaire[s]? du minist(?:è|e)re)\b/i
+};
+
+function detectHeadingRole(heading) {
+  if (!heading) return null;
+  const text = heading.toLowerCase();
+  if (headingRoleRegexes.observation.test(text)) return 'observation';
+  if (headingRoleRegexes.recommendation.test(text)) return 'recommendation';
+  if (headingRoleRegexes.response.test(text)) return 'response';
+  return null;
+}
+
 module.exports = {
   statutes,
   regulations,
@@ -93,7 +122,9 @@ module.exports = {
   findHeadings,
   findCitations,
   normalizeNumber,
-  normalizeCurrencyAmount
+  normalizeCurrencyAmount,
+  normalizeEntityName,
+  detectHeadingRole
 };
 
 if (require.main === module) {
