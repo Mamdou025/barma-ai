@@ -454,7 +454,7 @@ function extractJurisEdges(segments) {
     }
   }
 
-  return edges;
+  return edges.filter(e => !(e.type === 'citesStatute' && /^S\.\s*\d+$/.test(e.surface)));
 }
 
 
