@@ -22,17 +22,9 @@ router.post('/chat', async (req, res) => {
 
   try {
     if (!Array.isArray(document_ids) || document_ids.length === 0) {
-      const { data: docs, error: docsError } = await supabase
-        .from('documents')
-        .select('id');
-
-      if (docsError) {
-        console.error('❌ Error fetching document IDs:', docsError.message);
-        return res.status(500).json({ error: 'Error fetching document IDs' });
-      }
-
-      document_ids = docs.map(d => d.id);
-      res.locals.usedAllDocs = true;
+      return res
+        .status(400)
+        .json({ error: 'No document selected or document not indexed' });
     }
 
     // 1. Chargement des règles PAN
@@ -63,6 +55,13 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
         query: message,
         filters: { ...(req.body?.filters || {}), document_id: document_ids }
       });
+
+      if (!segments || segments.length === 0) {
+        return res
+          .status(400)
+          .json({ error: 'No document selected or document not indexed' });
+      }
+
       const contextText = segments
         .map(seg => `[${seg.type}:${seg.role}] ${seg.text}`)
         .join('\n\n');
@@ -94,6 +93,12 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
         return res.status(500).json({ error: 'Error fetching chunks' });
       }
 
+      if (!allChunks || allChunks.length === 0) {
+        return res
+          .status(400)
+          .json({ error: 'No document selected or document not indexed' });
+      }
+
       // 4. Similarité cosinus
       const scoredChunks = allChunks.map(chunk => {
         const embedding = Array.isArray(chunk.embedding)
@@ -107,6 +112,12 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
       const topChunks = scoredChunks
         .sort((a, b) => b.similarity - a.similarity)
         .slice(0, 5);
+
+      if (topChunks.length === 0) {
+        return res
+          .status(400)
+          .json({ error: 'No document selected or document not indexed' });
+      }
 
       const contextText = topChunks
         .map(c => `Chunk ${c.chunk_index}:\n${c.content}`)

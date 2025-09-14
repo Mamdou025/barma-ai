@@ -25,7 +25,11 @@ const MindMapView = ({ selectedDoc }) => {
       setMindMap(response.mindmap);
     } catch (err) {
       console.error('MindMap generation error:', err);
-      setError(err.message);
+      let errorMessage = err.message;
+      if (errorMessage === 'No document selected or document not indexed') {
+        errorMessage += '. Please re-select or re-ingest the PDF.';
+      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

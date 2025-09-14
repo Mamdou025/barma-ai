@@ -9,15 +9,27 @@ router.post('/mindmap', async (req, res) => {
 
   console.log('🟡 Received document_ids:', document_ids);
 
+  if (!Array.isArray(document_ids) || document_ids.length === 0) {
+    return res
+      .status(400)
+      .json({ error: 'No document selected or document not indexed' });
+  }
+
   try {
     const { data: docs, error: fetchErr } = await supabase
       .from('documents')
       .select('text_content') // change this to match your actual column name
       .in('id', document_ids);
 
-    if (fetchErr || !docs) {
+    if (fetchErr) {
       console.error('❌ Failed to fetch document text:', fetchErr);
       return res.status(500).json({ error: 'Failed to load document text.' });
+    }
+
+    if (!docs || docs.length === 0) {
+      return res
+        .status(400)
+        .json({ error: 'No document selected or document not indexed' });
     }
 
     const fullText = docs.map(doc => doc.text_content).join('\n\n');
