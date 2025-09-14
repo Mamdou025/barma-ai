@@ -8,7 +8,7 @@ test('cutStatute invokes findHeadings without throwing', t => {
   const { cutStatute } = require('./chunkings');
 
   const sampleText = 'Article 1\nSome content\nArticle 2\nMore content';
-  const meta = { doc_id: 'doc1', type: 'statute' };
+  const meta = { document_id: 'doc1', type: 'statute' };
 
   assert.doesNotThrow(() => {
     cutStatute(sampleText, meta);

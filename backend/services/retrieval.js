@@ -97,7 +97,7 @@ async function expandWithKG(segments, intent) {
     .in('src_segment_id', segIds);
 
   const dstSegIds = edges.map(e => e.dst_segment_key).filter(Boolean);
-  const dstDocIds = edges.map(e => e.dst_doc_key).filter(Boolean);
+  const dstDocumentIds = edges.map(e => e.dst_doc_key).filter(Boolean);
 
   let extra = [];
   if (dstSegIds.length) {
@@ -107,8 +107,8 @@ async function expandWithKG(segments, intent) {
       .in('id', dstSegIds);
     extra = extra.concat(data || []);
   }
-  if (dstDocIds.length) {
-    let qb = supabase.from('document_segments').select('*').in('doc_id', dstDocIds);
+  if (dstDocumentIds.length) {
+    let qb = supabase.from('document_segments').select('*').in('document_id', dstDocumentIds);
     if (intent.roles.length) qb = qb.in('role', intent.roles);
     const { data } = await qb;
     extra = extra.concat(data || []);

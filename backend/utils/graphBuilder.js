@@ -13,7 +13,7 @@ function extractAndBuildEdges(segments = []) {
   const pushEdge = ({ src, rel, dstKey, dstType, dstSegmentKey, payload }) => {
     if (!dstKey) {
       unresolved.push({
-        src_doc_id: src.doc_id,
+        src_doc_id: src.document_id,
         src_segment_id: src.segment_id,
         rel,
         target: dstKey
@@ -22,7 +22,7 @@ function extractAndBuildEdges(segments = []) {
     }
     edges.push({
       id: randomUUID(),
-      src_doc_id: src.doc_id,
+      src_doc_id: src.document_id,
       src_segment_id: src.segment_id,
       src_type: src.type,
       rel,
@@ -34,9 +34,9 @@ function extractAndBuildEdges(segments = []) {
   };
 
   segments.forEach((seg) => {
-    const { doc_id, type, role, metadata = {} } = seg;
+    const { document_id, type, role, metadata = {} } = seg;
     const src = {
-      doc_id,
+      document_id,
       segment_id: metadata.segment_id || metadata.id || null,
       type
     };

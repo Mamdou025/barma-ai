@@ -61,7 +61,7 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
     if (process.env.RAG_V2 !== '0') {
       const { segments } = await retrieveByQuery({
         query: message,
-        filters: { ...(req.body?.filters || {}), doc_id: document_ids }
+        filters: { ...(req.body?.filters || {}), document_id: document_ids }
       });
       const contextText = segments
         .map(seg => `[${seg.type}:${seg.role}] ${seg.text}`)
