@@ -17,7 +17,7 @@ function cosineSimilarity(a, b) {
 
 router.post('/chat', async (req, res) => {
   const { message, session_id, vulgarisation = false } = req.body;
-  let document_ids = req.body.document_ids;
+  let document_ids = req.body.document_ids || req.body.documentIds || [];
   const startTime = Date.now();
 
   try {

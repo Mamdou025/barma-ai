@@ -53,8 +53,9 @@ export const api = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        message: message,
-        document_ids: documentIds, // Your backend expects this format
+        message,
+        document_ids: documentIds, // Backend expects snake_case
+        documentIds, // Also send camelCase for compatibility
         session_id: "12122212",
       }),
     });
