@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
 import { api } from '../../utils/api';
 import ChatHistory from './ChatHistory';
+import { toast } from 'react-toastify';
 
 // Icones 
 import com003 from '../../icons/com/com003.svg' ;
@@ -25,7 +26,7 @@ const ChatBox = ({ selectedDoc }) => {
     if (!input.trim()) return;
 
     if (!selectedDoc) {
-      alert('Please select a document first');
+      toast.error('Please select a document first');
       return;
     }
 
@@ -138,7 +139,7 @@ const ChatBox = ({ selectedDoc }) => {
           />
           <button 
             onClick={handleSend}
-            disabled={!input.trim() || !selectedDoc || loading}
+            disabled={!selectedDoc || !input.trim() || loading}
             className="send-button"
           >
             {loading ? '⏳' : '🚀'}

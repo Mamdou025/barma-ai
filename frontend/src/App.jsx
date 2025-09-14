@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useResizable } from './hooks/useResizable';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const App = () => {
   const [documents, setDocuments] = useState([]);
@@ -47,6 +49,7 @@ const App = () => {
       <div className="panel right-panel-main">
         <RightPanel selectedDoc={selectedDoc} />
       </div>
+      <ToastContainer />
     </div>
   );
 };
