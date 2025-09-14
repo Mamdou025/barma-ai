@@ -36,16 +36,12 @@ const ChatBox = ({ selectedDoc }) => {
     setError(null);
     
     // Add user message to chat
-  console.log('=== SEND BUTTON CLICKED ===');
-  console.log('1. User message:', userMessage);
-  console.log('2. Selected document:', selectedDoc);
-  console.log('3. Selected document ID:', selectedDoc?.id);
-  console.log('4. Document IDs array:', [selectedDoc.id]);
-  console.log('5. About to call api.sendMessage with:', {
-    message: userMessage,
-    documentIds: [selectedDoc.id]
-  });
-  console.log('==============================');
+    const payload = {
+      message: userMessage,
+      document_ids: [selectedDoc.id],
+      session_id: sessionIdRef.current,
+    };
+    console.log('api.sendMessage payload:', JSON.stringify(payload));
 
     setMessages(prev => [...prev, { message: userMessage, isUser: true }]);
     setLoading(true);
@@ -57,11 +53,12 @@ const ChatBox = ({ selectedDoc }) => {
         [selectedDoc.id],
         sessionIdRef.current
       );
-      
+      console.log('api.sendMessage response:', response);
+
       // Add AI response to chat
-      setMessages(prev => [...prev, { 
-        message: response.reply, 
-        isUser: false 
+      setMessages(prev => [...prev, {
+        message: response.reply,
+        isUser: false
       }]);
       
     } catch (err) {
