@@ -56,13 +56,15 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
 
     let messages = [];
 
-    if (process.env.RAG_V2 === '1') {
-      const segments = await retrieveByQuery({
+    // Par défaut, on interroge les "document_segments". 
+    // Définir RAG_V2=0 pour utiliser l'ancien mode basé sur "chunks".
+    if (process.env.RAG_V2 !== '0') {
+      const { segments } = await retrieveByQuery({
         query: message,
         filters: req.body?.filters || {}
       });
       const contextText = segments
-        .map(seg => `[${seg.metadata.type}:${seg.metadata.role}] ${seg.text}`)
+        .map(seg => `[${seg.type}:${seg.role}] ${seg.text}`)
         .join('\n\n');
       const citationIds = segments.map(seg => seg.id).join(', ');
 
