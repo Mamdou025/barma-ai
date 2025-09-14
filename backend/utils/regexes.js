@@ -43,6 +43,29 @@ const publicReports = {
   procurement: /\b(?:marché[s]? public[s]?|procurement|tender|contrat[s]?)\b/i
 };
 
+// Generic regex helpers
+const articleMarkerRegex = /\b((?:article|art\.?|section|sec\.?)\s*)(\d+[A-Za-z0-9\-]*)/gi;
+
+// Splits an article into subsections when a new paragraph/alinéa marker appears
+// Matches newlines that are immediately followed by an enumeration marker
+const alineaMarkerRegex = /\n(?=\s*(?:\d+|[IVX]+|[A-Z])(?:[.)°-]))/g;
+
+function findHeadings(text) {
+  if (!text) return [];
+  const regex = /^(?:[IVX]+|[A-Z]|\d+)(?:[.)])?\s+[^\n]+/gm;
+  return [...text.match(regex) || []].map(h => h.trim());
+}
+
+function findCitations(text) {
+  if (!text) return [];
+  const citationRegexes = [
+    /\b(?:article|art\.?|section|sec\.?|alinéa|al\.?|para\.?|§|s\.)\s*\d+[A-Za-z0-9\-]*\b/gi,
+    /\b\d{4}\s+[A-Z]{2,}\s+\d+\b/g, // neutral citations
+    /\b[A-Z][A-Za-z0-9]+\s+v(?:s\.?|\.)\s+[A-Z][A-Za-z0-9]+/g
+  ];
+  return citationRegexes.flatMap(r => text.match(r) || []);
+}
+
 // Helpers
 function normalizeNumber(input) {
   if (typeof input === 'number') return input;
@@ -65,6 +88,10 @@ module.exports = {
   judgments,
   doctrine,
   publicReports,
+  articleMarkerRegex,
+  alineaMarkerRegex,
+  findHeadings,
+  findCitations,
   normalizeNumber,
   normalizeCurrencyAmount
 };
