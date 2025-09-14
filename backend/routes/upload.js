@@ -23,9 +23,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
   try {
     const dataBuffer = fs.readFileSync(file.path);
-    const hasPDFHeader = dataBuffer.slice(0, 4).toString() === '%PDF';
-    const isPDFMime = file.mimetype === 'application/pdf';
-    if (!hasPDFHeader || !isPDFMime) {
+    if (
+      file.mimetype !== 'application/pdf' ||
+      dataBuffer.slice(0, 4).toString() !== '%PDF'
+    ) {
       fs.unlinkSync(file.path);
       return res
         .status(400)
