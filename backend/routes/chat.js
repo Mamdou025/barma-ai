@@ -16,14 +16,25 @@ function cosineSimilarity(a, b) {
 }
 
 router.post('/chat', async (req, res) => {
-  const { message, document_ids, session_id, vulgarisation = false } = req.body;
+  const { message, session_id, vulgarisation = false } = req.body;
+  let document_ids = req.body.document_ids;
   const startTime = Date.now();
 
-  if (!Array.isArray(document_ids) || document_ids.length === 0) {
-    return res.status(400).json({ error: 'No document_ids provided' });
-  }
-
   try {
+    if (!Array.isArray(document_ids) || document_ids.length === 0) {
+      const { data: docs, error: docsError } = await supabase
+        .from('documents')
+        .select('id');
+
+      if (docsError) {
+        console.error('❌ Error fetching document IDs:', docsError.message);
+        return res.status(500).json({ error: 'Error fetching document IDs' });
+      }
+
+      document_ids = docs.map(d => d.id);
+      res.locals.usedAllDocs = true;
+    }
+
     // 1. Chargement des règles PAN
     const rulesText = rules?.PAN_rules?.instruction_summary || '';
 
@@ -140,7 +151,11 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
     }
 
     // 7. Réponse API
-    res.json({ reply: aiResponse, response_time_ms: responseTime });
+    res.json({
+      reply: aiResponse,
+      response_time_ms: responseTime,
+      used_all_documents: !!res.locals.usedAllDocs
+    });
 
   } catch (err) {
     console.error('❌ OpenAI error:', err);
