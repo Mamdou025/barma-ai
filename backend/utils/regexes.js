@@ -95,3 +95,7 @@ module.exports = {
   normalizeNumber,
   normalizeCurrencyAmount
 };
+
+if (require.main === module) {
+  console.log('Available exports:', Object.keys(module.exports));
+}
