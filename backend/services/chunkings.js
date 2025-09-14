@@ -232,55 +232,175 @@ function cutPublicReport(docText, meta, tables = []) {
   const sections = splitSections(docText, roles);
   const segments = [];
 
-  const extractEntities = text => {
-    const matches = text.match(/\b[A-Z][a-z]+\b/g) || [];
-    return Array.from(new Set(matches));
+  const extractEntities = text =>
+    resolveEntities(text.match(/\b[A-Z][\w'’-]+(?:\s+[A-Z][\w'’-]+){0,4}\b/g) || []);
+  const extractIrregularities = text =>
+    [...new Set((text.match(/irregularit|fraud|non[- ]?conform/gi) || []).map(m => m.toLowerCase()))];
+  const extractAmounts = text =>
+    [...new Set(text.match(/[€$£]?\d[\d.,]*(?:\s?(?:FCFA|CFA|EUR|USD|GBP))?/g) || [])];
+  const extractDates = text => {
+    const d1 = text.match(/\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/g) || [];
+    const d2 =
+      text.match(
+        /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2},?\s+\d{4}\b/gi
+      ) || [];
+    return [...new Set([...d1, ...d2])];
   };
-  const extractIrregularities = text => {
-    const matches = text.match(/irregularit|fraud|non[- ]?conform/gi) || [];
-    return matches.map(m => m.toLowerCase());
-  };
-  const extractAmounts = text => {
-    const matches = text.match(/[€$£]?\d+[\d\.,]*(?:\s?(?:EUR|USD|GBP))?/g) || [];
-    return matches;
-  };
+  const extractProcurementRefs = text =>
+    [...new Set(text.match(/\b(?:procurement|contract|tender|rfp)\s*(?:n°|no\.|#)?\s*[\w\/\-]+/gi) || [])];
+  const extractFollowUp = text =>
+    [...new Set((text.match(/implemented|not implemented|ongoing|pending|in progress|completed/gi) || []).map(m => m.toLowerCase()))];
+  const extractStatutes = text => findCitations(text).filter(x => /art\.|article/i.test(x));
 
-  roles.forEach(role => {
-    if (!sections[role]) return;
-    const text = sections[role].join('\n');
-    if (role === 'recommendation') {
-      const recs = text.split(/\n(?=\s*\d+\.|-)/).filter(r => r.trim());
-      recs.forEach(r => {
-        const entitiesMentioned = resolveEntities(extractEntities(r));
-        segments.push(
-          createSegment(meta, role, r, {
-            entities_mentioned: entitiesMentioned,
-            irregularities: extractIrregularities(r),
-            amounts: extractAmounts(r)
-          })
-        );
-      });
-    } else if (role === 'annex_caption') {
-      sections[role].forEach(caption => {
-        const table = tables.find(
-          t => t.caption.trim().toLowerCase() === caption.trim().toLowerCase()
-        );
-        const extra = table
-          ? { table_id: table.id, table_csv_url: table.csv_url }
-          : {};
-        segments.push(createSegment(meta, role, caption, extra));
-      });
-    } else {
-      const entitiesMentioned = resolveEntities(extractEntities(text));
-      segments.push(
-        createSegment(meta, role, text, {
-          entities_mentioned: entitiesMentioned,
-          irregularities: extractIrregularities(text),
-          amounts: extractAmounts(text)
-        })
-      );
-    }
+  const enrich = (t, extra = {}) => ({
+    ...extra,
+    entities_mentioned: extractEntities(t),
+    irregularities: extractIrregularities(t),
+    amounts: extractAmounts(t),
+    dates: extractDates(t),
+    procurement_refs: extractProcurementRefs(t),
+    statutes_cited: extractStatutes(t),
+    follow_up_state: extractFollowUp(t)
   });
+
+  if (sections.header) {
+    const text = sections.header.join('\n');
+    segments.push(createSegment(meta, 'header', text, enrich(text)));
+  }
+  if (sections.executive_summary) {
+    const text = sections.executive_summary.join('\n');
+    segments.push(createSegment(meta, 'executive_summary', text, enrich(text)));
+  }
+
+  if (sections.body) {
+    const bodyText = sections.body.join('\n');
+    const obsRegex = /Observation\s*n[°o]\s*(\d+)/gi;
+    const matches = [...bodyText.matchAll(obsRegex)];
+
+    if (!matches.length) {
+      chunkParagraphs(bodyText, 300, 700, 60, meta, 'body').forEach(seg =>
+        segments.push({ ...seg, metadata: { ...seg.metadata, ...enrich(seg.text) } })
+      );
+    } else {
+      if (matches[0].index > 0) {
+        const pre = bodyText.slice(0, matches[0].index);
+        chunkParagraphs(pre, 300, 700, 60, meta, 'body').forEach(seg =>
+          segments.push({ ...seg, metadata: { ...seg.metadata, ...enrich(seg.text) } })
+        );
+      }
+
+      matches.forEach((m, idx) => {
+        const start = m.index;
+        const end = matches[idx + 1]?.index ?? bodyText.length;
+        const block = bodyText.slice(start, end);
+        const obsId = m[1];
+        const afterHeading = block.slice(m[0].length).trim();
+
+        const responseIdx = afterHeading.search(/\bResponse\b/i);
+        const recommendationIdx = afterHeading.search(/\bRecommendation\b/i);
+        let obsEnd = afterHeading.length;
+        if (responseIdx !== -1 && responseIdx < obsEnd) obsEnd = responseIdx;
+        if (recommendationIdx !== -1 && recommendationIdx < obsEnd) obsEnd = recommendationIdx;
+        const obsText = afterHeading.slice(0, obsEnd).trim();
+
+        if (obsText) {
+          chunkParagraphs(obsText, 300, 700, 60, meta, 'observation').forEach(seg =>
+            segments.push({
+              ...seg,
+              metadata: { ...seg.metadata, ...enrich(seg.text, { observation_id: obsId }) }
+            })
+          );
+        }
+
+        let responseText = '';
+        let recBlock = '';
+        if (responseIdx !== -1) {
+          const rStart =
+            responseIdx + afterHeading.slice(responseIdx).match(/Response/i)[0].length;
+          const rEnd =
+            recommendationIdx !== -1 && recommendationIdx > responseIdx
+              ? recommendationIdx
+              : afterHeading.length;
+          responseText = afterHeading.slice(rStart, rEnd).trim();
+        }
+        if (recommendationIdx !== -1) {
+          const recStart =
+            recommendationIdx +
+            afterHeading.slice(recommendationIdx).match(/Recommendation/i)[0].length;
+          const recEnd =
+            responseIdx !== -1 && responseIdx > recommendationIdx
+              ? responseIdx
+              : afterHeading.length;
+          recBlock = afterHeading.slice(recStart, recEnd).trim();
+        }
+
+        if (responseText) {
+          chunkParagraphs(responseText, 300, 700, 60, meta, 'response').forEach(seg =>
+            segments.push({
+              ...seg,
+              metadata: {
+                ...seg.metadata,
+                ...enrich(seg.text, { observation_id: obsId, response_to: obsId })
+              }
+            })
+          );
+        }
+        if (recBlock) {
+          const recs = recBlock.split(/\n+(?=\s*(?:\d+\.|-))/).filter(r => r.trim());
+          if (!recs.length) recs.push(recBlock);
+          recs.forEach((rText, rIdx) => {
+            const cleaned = rText.replace(/^\s*(?:\d+\.|-)/, '').trim();
+            segments.push(
+              createSegment(
+                meta,
+                'recommendation',
+                cleaned,
+                enrich(cleaned, {
+                  observation_id: obsId,
+                  recommendation_id: `${obsId}-${rIdx + 1}`,
+                  response_to: obsId
+                })
+              )
+            );
+          });
+        }
+      });
+    }
+  }
+
+  ['observation', 'response'].forEach(role => {
+    if (!sections[role]) return;
+    chunkParagraphs(sections[role].join('\n'), 300, 700, 60, meta, role).forEach(seg =>
+      segments.push({ ...seg, metadata: { ...seg.metadata, ...enrich(seg.text) } })
+    );
+  });
+
+  if (sections.recommendation) {
+    const text = sections.recommendation.join('\n');
+    const recs = text.split(/\n(?=\s*\d+\.|-)/).filter(r => r.trim());
+    recs.forEach((r, i) => {
+      const cleaned = r.replace(/^\s*(?:\d+\.|-)/, '').trim();
+      segments.push(
+        createSegment(
+          meta,
+          'recommendation',
+          cleaned,
+          enrich(cleaned, { recommendation_id: `GEN-${i + 1}` })
+        )
+      );
+    });
+  }
+
+  if (sections.annex_caption) {
+    sections.annex_caption.forEach(caption => {
+      const table = tables.find(
+        t => t.caption.trim().toLowerCase() === caption.trim().toLowerCase()
+      );
+      const extra = table ? { table_id: table.id, table_csv_url: table.csv_url } : {};
+      segments.push(createSegment(meta, 'annex_caption', caption, extra));
+    });
+  }
+
   return segments;
 }
 
