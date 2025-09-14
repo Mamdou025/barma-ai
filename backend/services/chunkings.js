@@ -1,11 +1,11 @@
 // services/chunkings.js
 
-import {
+const {
   findHeadings,
   findCitations,
   articleMarkerRegex,
   alineaMarkerRegex
-} from '../utils/regexes.js';
+} = require('../utils/regexes.js');
 
 function countTokens(text) {
   if (!text) return 0;
@@ -34,7 +34,7 @@ function splitByRegex(text, regex) {
   return segments;
 }
 
-export function cutStatute(docText, meta) {
+function cutStatute(docText, meta) {
   const segments = [];
   const articles = splitByRegex(docText, articleMarkerRegex);
 
@@ -69,7 +69,7 @@ export function cutStatute(docText, meta) {
   return segments;
 }
 
-export function cutRegulation(docText, meta) {
+function cutRegulation(docText, meta) {
   return cutStatute(docText, meta);
 }
 
@@ -127,7 +127,7 @@ function chunkParagraphs(text, minTokens, maxTokens, overlapTokens, meta, role) 
   );
 }
 
-export function cutJudgment(docText, meta) {
+function cutJudgment(docText, meta) {
   const roles = ['header', 'facts', 'arguments', 'reasons', 'disposition', 'signatures'];
   const sections = splitSections(docText, roles);
   const segments = [];
@@ -164,7 +164,7 @@ export function cutJudgment(docText, meta) {
   return segments;
 }
 
-export function cutDoctrine(docText, meta) {
+function cutDoctrine(docText, meta) {
   const roles = ['header', 'abstract', 'body', 'conclusion', 'notes', 'bibliography'];
   const sections = splitSections(docText, roles);
   const segments = [];
@@ -218,7 +218,7 @@ export function cutDoctrine(docText, meta) {
   return segments;
 }
 
-export function cutPublicReport(docText, meta) {
+function cutPublicReport(docText, meta) {
   const roles = [
     'header',
     'executive_summary',
@@ -271,7 +271,7 @@ export function cutPublicReport(docText, meta) {
   return segments;
 }
 
-export function chunkText(text, maxWords = 500, overlap = 100) {
+function chunkText(text, maxWords = 500, overlap = 100) {
   const words = text.split(/\s+/);
   const chunks = [];
 
@@ -284,7 +284,7 @@ export function chunkText(text, maxWords = 500, overlap = 100) {
   return chunks;
 }
 
-export default {
+module.exports = {
   cutStatute,
   cutRegulation,
   cutJudgment,
