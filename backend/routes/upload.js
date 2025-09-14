@@ -62,10 +62,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       judgments.neutralCitation.test(headerSample)
     ) {
       family = 'judgment';
-    } else if (doctrine.resume.test(headerSample)) {
-      family = 'doctrine';
     } else if (publicReports.executiveSummary.test(headerSample)) {
       family = 'public_report';
+    } else if (doctrine.resume.test(headerSample)) {
+      family = 'doctrine';
     } else if (statutes.articleMarker.test(headerSample)) {
       family = 'statute';
     }

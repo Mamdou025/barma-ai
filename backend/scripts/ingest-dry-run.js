@@ -22,8 +22,8 @@ function detectType(text) {
   if (test(regexes.regulations.visa)) return 'regulation';
   if (test(regexes.statutes.articleMarker)) return 'statute';
   if (test(regexes.judgments.headings.facts)) return 'judgment';
-  if (test(regexes.doctrine.resume)) return 'doctrine';
   if (test(regexes.publicReports.executiveSummary)) return 'public_report';
+  if (test(regexes.doctrine.resume)) return 'doctrine';
   return 'unknown';
 }
 
