@@ -1,11 +1,18 @@
 
 const express = require('express');
+const { supabase } = require('../utils/supabaseClient');
 
 const router = express.Router();
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // Save chat log entry
 router.post('/chat-logs', async (req, res) => {
   const { document_id, user_message, ai_response } = req.body;
+
+  if (!UUID_REGEX.test(document_id)) {
+    return res.status(400).json({ error: 'document_id must be a valid UUID' });
+  }
 
   try {
     const { data, error } = await supabase
@@ -22,13 +29,14 @@ router.post('/chat-logs', async (req, res) => {
   }
 });
 
-const { supabase } = require('../utils/supabaseClient');
-
-
 // Get chat logs for a specific document
 router.get('/chatlogs/:documentId', async (req, res) => {
   const { documentId } = req.params;
   const { limit = 50, offset = 0 } = req.query;
+
+  if (!UUID_REGEX.test(documentId)) {
+    return res.status(400).json({ error: 'documentId must be a valid UUID' });
+  }
 
   try {
     const { data: logs, error } = await supabase
@@ -99,6 +107,10 @@ router.get('/chatlogs', async (req, res) => {
 // Delete chat logs for a document
 router.delete('/chatlogs/:documentId', async (req, res) => {
   const { documentId } = req.params;
+
+  if (!UUID_REGEX.test(documentId)) {
+    return res.status(400).json({ error: 'documentId must be a valid UUID' });
+  }
 
   try {
     const { error } = await supabase

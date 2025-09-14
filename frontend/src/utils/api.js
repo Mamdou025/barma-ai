@@ -88,6 +88,32 @@ export const api = {
     return response.json();
   },
 
+  // Fetch chat history for a document
+  getChatLogs: async (documentId) => {
+    const response = await fetch(`${API_BASE_URL}/api/chatlogs/${documentId}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Server responded with ${response.status}: ${errorText}`);
+    }
+
+    return response.json();
+  },
+
+  // Delete chat history for a document
+  deleteChatLogs: async (documentId) => {
+    const response = await fetch(`${API_BASE_URL}/api/chatlogs/${documentId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to delete chat logs');
+    }
+
+    return response.json();
+  },
+
    // Save or update notes for a document
   saveNotes: async (documentId, content, title ) => {
     console.log('💾 Saving notes for document:', documentId);
