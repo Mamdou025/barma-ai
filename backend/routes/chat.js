@@ -16,14 +16,31 @@ function cosineSimilarity(a, b) {
 }
 
 router.post('/chat', async (req, res) => {
-  const { message, document_ids, session_id, vulgarisation = false } = req.body;
+  const { message, session_id, vulgarisation = false } = req.body;
+  let document_ids = req.body.document_ids;
   const startTime = Date.now();
 
-  if (!Array.isArray(document_ids) || document_ids.length === 0) {
-    return res.status(400).json({ error: 'No document_ids provided' });
-  }
+  let usedAllDocuments = false;
 
   try {
+    if (!Array.isArray(document_ids) || document_ids.length === 0) {
+      const { data: docs, error: docsErr } = await supabase
+        .from('documents')
+        .select('id');
+
+      if (docsErr) {
+        console.error('❌ Error fetching document IDs:', docsErr.message);
+        return res.status(500).json({ error: 'Failed to retrieve document IDs' });
+      }
+
+      if (!docs || docs.length === 0) {
+        return res.status(400).json({ error: 'No documents available' });
+      }
+
+      document_ids = docs.map(d => d.id);
+      usedAllDocuments = true;
+    }
+
     // 1. Chargement des règles PAN
     const rulesText = rules?.PAN_rules?.instruction_summary || '';
 
@@ -140,7 +157,11 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
     }
 
     // 7. Réponse API
-    res.json({ reply: aiResponse, response_time_ms: responseTime });
+    const responsePayload = { reply: aiResponse, response_time_ms: responseTime };
+    if (usedAllDocuments) {
+      responsePayload.warning = 'Tous les documents ont été utilisés par défaut';
+    }
+    res.json(responsePayload);
 
   } catch (err) {
     console.error('❌ OpenAI error:', err);
