@@ -77,11 +77,7 @@ async function extractTextWithHelpers(buffer) {
         }),
     });
   } catch (err) {
-    if (
-      err?.message?.includes('FormatError') ||
-      err?.name?.includes('FormatError') ||
-      err?.details?.includes?.('FormatError')
-    ) {
+    if (err?.message?.includes('FormatError') || err?.name?.includes('FormatError')) {
       throw new Error('Invalid PDF structure');
     }
     throw err;
