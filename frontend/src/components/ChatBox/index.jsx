@@ -26,7 +26,7 @@ const ChatBox = ({ selectedDoc }) => {
     if (!input.trim()) return;
 
     if (!selectedDoc) {
-      toast.error('Please select a document first');
+      toast.warn('Please select a document first');
       return;
     }
 
@@ -137,9 +137,9 @@ const ChatBox = ({ selectedDoc }) => {
             rows={1}
             className="chat-input"
           />
-          <button 
+          <button
             onClick={handleSend}
-            disabled={!selectedDoc || !input.trim() || loading}
+            disabled={!input.trim() || !selectedDoc || loading}
             className="send-button"
           >
             {loading ? '⏳' : '🚀'}
