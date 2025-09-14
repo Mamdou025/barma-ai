@@ -9,6 +9,7 @@ const { randomUUID } = require('crypto');
 function extractAndBuildEdges(segments = []) {
   const edges = [];
   const unresolved = [];
+  const observations = {};
 
   const pushEdge = ({ src, rel, dstKey, dstType, dstSegmentKey, payload }) => {
     if (!dstKey) {
@@ -37,7 +38,12 @@ function extractAndBuildEdges(segments = []) {
     const { document_id, type, role, metadata = {} } = seg;
     const src = {
       document_id,
-      segment_id: metadata.segment_id || metadata.id || null,
+      segment_id:
+        metadata.segment_id ||
+        metadata.id ||
+        metadata.observation_id ||
+        metadata.recommendation_id ||
+        null,
       type
     };
 
@@ -92,7 +98,8 @@ function extractAndBuildEdges(segments = []) {
 
     // --- Public audit reports ---
     if (['public_report', 'report'].includes(type)) {
-      const entities = metadata.entities_mentioned || [];
+      const reportSrc = { document_id, segment_id: null, type };
+      const entities = metadata.entities || metadata.entities_mentioned || [];
       const irregularities = metadata.irregularities || [];
 
       entities.forEach((ent) =>
@@ -104,14 +111,56 @@ function extractAndBuildEdges(segments = []) {
         })
       );
 
-      irregularities.forEach((irr) =>
+      if (role === 'recommendation') {
+        irregularities.forEach((irr) =>
+          pushEdge({
+            src,
+            rel: 'addressesIrregularity',
+            dstKey: irr,
+            dstType: 'IRREGULARITY'
+          })
+        );
+      }
+
+      if (role === 'observation' && metadata.observation_id) {
+        observations[metadata.observation_id] = { ...src };
         pushEdge({
-          src,
-          rel: 'addressesIrregularity',
-          dstKey: irr,
-          dstType: 'IRREGULARITY'
-        })
-      );
+          src: reportSrc,
+          rel: 'hasObservation',
+          dstKey: document_id,
+          dstType: 'OBS',
+          dstSegmentKey: metadata.observation_id
+        });
+      }
+
+      if (role === 'recommendation' && metadata.recommendation_id) {
+        pushEdge({
+          src: reportSrc,
+          rel: 'hasRecommendation',
+          dstKey: document_id,
+          dstType: 'REC',
+          dstSegmentKey: metadata.recommendation_id
+        });
+      }
+
+      if (
+        role === 'response' &&
+        metadata.response_to &&
+        metadata.observation_id
+      ) {
+        const obsSrc =
+          observations[metadata.observation_id] || {
+            document_id,
+            segment_id: metadata.observation_id,
+            type
+          };
+        pushEdge({
+          src: obsSrc,
+          rel: 'elicitsResponseFrom',
+          dstKey: metadata.response_to,
+          dstType: 'ENTITY'
+        });
+      }
 
       (metadata.cases_followed || []).forEach((ref) =>
         pushEdge({
