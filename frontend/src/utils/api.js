@@ -63,7 +63,16 @@ export const api = {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to send message');
+      const message =
+        errorData.error ||
+        (response.status === 404
+          ? 'Document not indexed'
+          : response.status === 400
+          ? 'No document selected'
+          : 'Failed to send message');
+      const error = new Error(message);
+      error.status = response.status;
+      throw error;
     }
     
     return response.json();
