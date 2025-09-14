@@ -13,6 +13,7 @@ const ChatBox = ({ selectedDoc }) => {
   const [loading, setLoading] = useState(false);
   const [, setError] = useState(null);
   const messagesEndRef = useRef(null);
+  const sessionIdRef = useRef(crypto.randomUUID());
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -51,7 +52,11 @@ const ChatBox = ({ selectedDoc }) => {
 
     try {
       // Call your real API
-      const response = await api.sendMessage(userMessage, [selectedDoc.id]);
+      const response = await api.sendMessage(
+        userMessage,
+        [selectedDoc.id],
+        sessionIdRef.current
+      );
       
       // Add AI response to chat
       setMessages(prev => [...prev, { 

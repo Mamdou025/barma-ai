@@ -46,7 +46,7 @@ export const api = {
   },
 
   // Chat with AI - matches your /api/chat endpoint
-  sendMessage: async (message, documentIds) => {
+  sendMessage: async (message, documentIds, sessionId) => {
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: {
@@ -56,7 +56,7 @@ export const api = {
         message,
         document_ids: documentIds, // Backend expects snake_case
         documentIds, // Also send camelCase for compatibility
-        session_id: "12122212",
+        session_id: sessionId || crypto.randomUUID(),
       }),
     });
     
