@@ -1,4 +1,4 @@
-const { openai } = require('../utils/openaiClient.js');
+const openai = require('../utils/openaiClient.js');
 const { supabase } = require('../utils/supabaseClient.js');
 
 /**
