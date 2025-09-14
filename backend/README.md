@@ -73,3 +73,8 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 
 The `utils/regexes.js` module provides helper regexes and functions such as
 `findHeadings` and `findCitations` which assist in chunking legal documents.
+
+### Environment variables
+
+The chat endpoint retrieves context from the `document_segments` table by default.
+Set `RAG_V2=0` to fall back to the legacy `chunks`-based retrieval.
