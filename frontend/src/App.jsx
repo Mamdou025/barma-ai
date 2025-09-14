@@ -49,7 +49,7 @@ const App = () => {
       <div className="panel right-panel-main">
         <RightPanel selectedDoc={selectedDoc} />
       </div>
-      <ToastContainer />
+      <ToastContainer position="bottom-right" />
     </div>
   );
 };
