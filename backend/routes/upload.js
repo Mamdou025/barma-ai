@@ -156,6 +156,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     });
 
   } catch (err) {
+    if (err.message === 'Invalid PDF structure') {
+      console.error('❌ PDF parse error: Invalid PDF structure');
+      return res.status(400).json({ error: 'Invalid PDF structure' });
+    }
     console.error('❌ PDF parse error:', err);
     res.status(500).json({ error: 'Failed to parse and embed PDF' });
   }

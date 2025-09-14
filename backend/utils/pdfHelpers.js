@@ -66,14 +66,25 @@ function detectTables(pages) {
 
 async function extractTextWithHelpers(buffer) {
   const rawPages = [];
-  const data = await pdfParse(buffer, {
-    pagerender: (pageData) =>
-      pageData.getTextContent().then((textContent) => {
-        const text = textContent.items.map((item) => item.str).join(' ');
-        rawPages.push(text);
-        return text;
-      }),
-  });
+  let data;
+  try {
+    data = await pdfParse(buffer, {
+      pagerender: (pageData) =>
+        pageData.getTextContent().then((textContent) => {
+          const text = textContent.items.map((item) => item.str).join(' ');
+          rawPages.push(text);
+          return text;
+        }),
+    });
+  } catch (err) {
+    if (
+      err?.message?.includes('FormatError') ||
+      err?.name?.includes('FormatError')
+    ) {
+      throw new Error('Invalid PDF structure');
+    }
+    throw err;
+  }
 
   let pages = stripHeadersFooters(rawPages).map((p) => mergeHyphenatedWords(p));
   let text = pages.join('\n');
