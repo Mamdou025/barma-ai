@@ -122,7 +122,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     } = await chunkingsPromise;
     const { embedAndStoreSegments } = await embeddingPromise;
 
-    const meta = { doc_id: docInsert.id, type: family };
+    const meta = { document_id: docInsert.id, type: family };
     let segments = [];
     switch (family) {
       case 'regulation':
@@ -142,8 +142,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         segments = cutStatute(parsedData.text, meta);
         break;
     }
-
-    segments = segments.map((s) => ({ ...s, document_id: s.doc_id }));
 
     await embedAndStoreSegments(segments, { supabase });
 

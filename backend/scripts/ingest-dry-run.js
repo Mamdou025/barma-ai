@@ -66,7 +66,7 @@ async function run() {
   const docType = type === 'auto' ? detectType(text) : type;
   console.log(`Document type: ${docType}`);
 
-  const meta = { doc_id: 'dry-run', type: docType };
+  const meta = { document_id: 'dry-run', type: docType };
   const chunkings = await import('../services/chunkings.js');
 
   let segments = [];

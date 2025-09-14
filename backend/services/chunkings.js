@@ -14,7 +14,7 @@ function countTokens(text) {
 
 function createSegment(meta, role, text, extra = {}) {
   return {
-    doc_id: meta.doc_id,
+    document_id: meta.document_id,
     type: meta.type,
     role,
     text: text.trim(),
