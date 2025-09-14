@@ -12,6 +12,12 @@ const ChatBox = ({ selectedDoc }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [, setError] = useState(null);
+  // Filters
+  const [entity, setEntity] = useState('');
+  const [irregularities, setIrregularities] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [followUp, setFollowUp] = useState('');
   const messagesEndRef = useRef(null);
   const sessionIdRef = useRef(crypto.randomUUID());
 
@@ -34,12 +40,24 @@ const ChatBox = ({ selectedDoc }) => {
     const userMessage = input;
     setInput('');
     setError(null);
-    
+
+    const filters = {};
+    if (entity) filters.entity = entity;
+    if (irregularities)
+      filters.irregularities = irregularities
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
+    if (startDate) filters.startDate = startDate;
+    if (endDate) filters.endDate = endDate;
+    if (followUp) filters.followUp = followUp;
+
     // Add user message to chat
     const payload = {
       message: userMessage,
       document_ids: [selectedDoc.id],
       session_id: sessionIdRef.current,
+      filters,
     };
     console.log('api.sendMessage payload:', JSON.stringify(payload));
 
@@ -51,7 +69,8 @@ const ChatBox = ({ selectedDoc }) => {
       const response = await api.sendMessage(
         userMessage,
         [selectedDoc.id],
-        sessionIdRef.current
+        sessionIdRef.current,
+        filters
       );
       console.log('api.sendMessage response:', response);
 
@@ -99,6 +118,37 @@ const ChatBox = ({ selectedDoc }) => {
             En analyse: <strong>{selectedDoc.title}</strong>
           </div>
         )}
+      </div>
+
+      <div className="chat-filters">
+        <input
+          type="text"
+          placeholder="Entity"
+          value={entity}
+          onChange={e => setEntity(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Irregularities (comma separated)"
+          value={irregularities}
+          onChange={e => setIrregularities(e.target.value)}
+        />
+        <input
+          type="date"
+          value={startDate}
+          onChange={e => setStartDate(e.target.value)}
+        />
+        <input
+          type="date"
+          value={endDate}
+          onChange={e => setEndDate(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Follow-up state"
+          value={followUp}
+          onChange={e => setFollowUp(e.target.value)}
+        />
       </div>
 
       <div className="chat-messages">

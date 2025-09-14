@@ -51,9 +51,10 @@ Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'i
     // Par défaut, on interroge les "document_segments".
     // Définir RAG_V2=0 pour utiliser l'ancien mode basé sur "chunks".
     if (process.env.RAG_V2 !== '0') {
+      const bodyFilters = req.body && req.body.filters ? req.body.filters : {};
       const { segments } = await retrieveByQuery({
         query: message,
-        filters: { ...(req.body?.filters || {}), document_id: document_ids }
+        filters: { ...bodyFilters, document_id: document_ids }
       });
 
       if (!segments || segments.length === 0) {
