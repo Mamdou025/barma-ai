@@ -218,7 +218,7 @@ function cutDoctrine(docText, meta) {
   return segments;
 }
 
-function cutPublicReport(docText, meta) {
+function cutPublicReport(docText, meta, tables = []) {
   const roles = [
     'header',
     'executive_summary',
@@ -257,6 +257,16 @@ function cutPublicReport(docText, meta) {
             amounts: extractAmounts(r)
           })
         );
+      });
+    } else if (role === 'annex_caption') {
+      sections[role].forEach(caption => {
+        const table = tables.find(
+          t => t.caption.trim().toLowerCase() === caption.trim().toLowerCase()
+        );
+        const extra = table
+          ? { table_id: table.id, table_csv_url: table.csv_url }
+          : {};
+        segments.push(createSegment(meta, role, caption, extra));
       });
     } else {
       segments.push(
