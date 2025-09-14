@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // Regex maps for FR/EN headings and citations across document families
 
 // (A) Statutes / lois
@@ -69,17 +68,3 @@ module.exports = {
   normalizeNumber,
   normalizeCurrencyAmount
 };
-=======
-export const headingRegex = /^\s*(?:#+\s+.*|[A-Z][A-Z\s]+)\s*$/gm;
-export const citationRegex = /\[[^\]]+\]|\((?:[^()]*\d{4}[^()]*)\)/g;
-export const articleMarkerRegex = /(Article|Art\.?)[\s\n]*(\d+[A-Za-z0-9-]*)/gi;
-export const alineaMarkerRegex = /\n\s*(?:\(\d+\)|\d+\.|-)/g;
-
-export function findHeadings(text) {
-  return [...text.matchAll(headingRegex)].map(m => m[0]);
-}
-
-export function findCitations(text) {
-  return [...text.matchAll(citationRegex)].map(m => m[0]);
-}
->>>>>>> affb2a200715347f0d5a18f4af808b6847a89c2b
