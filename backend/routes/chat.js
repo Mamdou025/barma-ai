@@ -2,6 +2,7 @@ const express = require('express');
 const openai = require('../utils/openaiClient');
 const { supabase } = require('../utils/supabaseClient');
 const { getRules } = require('../utils/rulesLoader');
+const { retrieveByQuery } = require('../services/retrieval');
 
 const rules = getRules(); // Charge le fichier rules.yml une seule fois
 const router = express.Router();
@@ -23,46 +24,10 @@ router.post('/chat', async (req, res) => {
   }
 
   try {
-    // 1. Embedding de la question
-    const embedQ = await openai.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: message,
-      encoding_format: 'float'
-    });
-
-    const questionEmbedding = embedQ.data[0].embedding;
-
-    // 2. Récupération des chunks pertinents
-    const { data: allChunks, error: fetchErr } = await supabase
-      .from('chunks')
-      .select('content, embedding, chunk_index, document_id')
-      .in('document_id', document_ids);
-
-    if (fetchErr) {
-      console.error('❌ Error fetching chunks:', fetchErr.message);
-      return res.status(500).json({ error: 'Error fetching chunks' });
-    }
-
-    // 3. Similarité cosinus
-    const scoredChunks = allChunks.map(chunk => {
-      const embedding = Array.isArray(chunk.embedding)
-        ? chunk.embedding
-        : JSON.parse(chunk.embedding);
-      const similarity = cosineSimilarity(questionEmbedding, embedding);
-      return { ...chunk, similarity };
-    });
-
-    // 4. Top 5
-    const topChunks = scoredChunks
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, 5);
-
-    const contextText = topChunks.map(c => `Chunk ${c.chunk_index}:\n${c.content}`).join('\n\n');
-
-    // 5. Chargement des règles PAN
+    // 1. Chargement des règles PAN
     const rulesText = rules?.PAN_rules?.instruction_summary || '';
 
-    const systemPrompt = `
+    const baseSystemPrompt = `
 ${rulesText}
 
 Vous êtes un assistant juridique formé pour répondre aux questions de manière claire et précise.
@@ -72,18 +37,80 @@ Vous pouvez utiliser un raisonnement général, mais toutes les conclusions juri
 Répondez uniquement aux questions en utilisant le contexte extrait des documents sources vérifiés.
 
 Si aucune source n'est fournie, indiquez-le clairement. Ne devinez jamais et n'inventez jamais d'informations juridiques.
-`.trim();
+    `.trim();
 
     const fullMessage = vulgarisation
       ? "Mode vulgarisation activé. Réponds de manière simple.\n\n" + message
       : message;
 
+    let messages = [];
+
+    if (process.env.RAG_V2 === '1') {
+      const segments = await retrieveByQuery({
+        query: message,
+        filters: req.body?.filters || {}
+      });
+      const contextText = segments
+        .map(seg => `[${seg.metadata.type}:${seg.metadata.role}] ${seg.text}`)
+        .join('\n\n');
+      const citationIds = segments.map(seg => seg.id).join(', ');
+
+      messages = [
+        { role: 'system', content: `Context retrieved (citations: ${citationIds}):\n${contextText}` },
+        { role: 'system', content: baseSystemPrompt },
+        { role: 'user', content: fullMessage }
+      ];
+    } else {
+      // 2. Embedding de la question
+      const embedQ = await openai.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: message,
+        encoding_format: 'float'
+      });
+
+      const questionEmbedding = embedQ.data[0].embedding;
+
+      // 3. Récupération des chunks pertinents
+      const { data: allChunks, error: fetchErr } = await supabase
+        .from('chunks')
+        .select('content, embedding, chunk_index, document_id')
+        .in('document_id', document_ids);
+
+      if (fetchErr) {
+        console.error('❌ Error fetching chunks:', fetchErr.message);
+        return res.status(500).json({ error: 'Error fetching chunks' });
+      }
+
+      // 4. Similarité cosinus
+      const scoredChunks = allChunks.map(chunk => {
+        const embedding = Array.isArray(chunk.embedding)
+          ? chunk.embedding
+          : JSON.parse(chunk.embedding);
+        const similarity = cosineSimilarity(questionEmbedding, embedding);
+        return { ...chunk, similarity };
+      });
+
+      // 5. Top 5
+      const topChunks = scoredChunks
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, 5);
+
+      const contextText = topChunks
+        .map(c => `Chunk ${c.chunk_index}:\n${c.content}`)
+        .join('\n\n');
+
+      messages = [
+        { role: 'system', content: baseSystemPrompt },
+        {
+          role: 'user',
+          content: `Here is some context:\n\n${contextText}\n\nNow answer this question:\n${fullMessage}`
+        }
+      ];
+    }
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Here is some context:\n\n${contextText}\n\nNow answer this question:\n${fullMessage}` }
-      ]
+      messages
     });
 
     const aiResponse = completion.choices[0].message.content;
