@@ -219,15 +219,7 @@ function cutDoctrine(docText, meta) {
 }
 
 function cutPublicReport(docText, meta) {
-  const roles = [
-    'header',
-    'executive_summary',
-    'body',
-    'observation',
-    'response',
-    'recommendation',
-    'annex_caption'
-  ];
+  const roles = ['header', 'executive_summary', 'body', 'annex_caption'];
   const sections = splitSections(docText, roles);
   const segments = [];
 
@@ -237,37 +229,156 @@ function cutPublicReport(docText, meta) {
   };
   const extractIrregularities = text => {
     const matches = text.match(/irregularit|fraud|non[- ]?conform/gi) || [];
-    return matches.map(m => m.toLowerCase());
+    return Array.from(new Set(matches.map(m => m.toLowerCase())));
   };
   const extractAmounts = text => {
     const matches = text.match(/[€$£]?\d+[\d\.,]*(?:\s?(?:EUR|USD|GBP))?/g) || [];
-    return matches;
+    return Array.from(new Set(matches));
   };
+  const extractDates = text => {
+    const d1 = text.match(/\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/g) || [];
+    const d2 =
+      text.match(
+        /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2},?\s+\d{4}\b/gi
+      ) || [];
+    return Array.from(new Set([...d1, ...d2]));
+  };
+  const extractProcurementRefs = text => {
+    const matches =
+      text.match(/\b(?:procurement|contract|tender|rfp)\s*(?:no\.?|#)?\s*[\w\/-]+/gi) || [];
+    return Array.from(new Set(matches));
+  };
+  const extractFollowUp = text => {
+    const matches =
+      text.match(/implemented|not implemented|ongoing|pending|in progress|completed/gi) || [];
+    return Array.from(new Set(matches.map(m => m.toLowerCase())));
+  };
+  const extractStatutes = text => findCitations(text).filter(x => /art\.|article/i.test(x));
 
-  roles.forEach(role => {
-    if (!sections[role]) return;
-    const text = sections[role].join('\n');
-    if (role === 'recommendation') {
-      const recs = text.split(/\n(?=\s*\d+\.|-)/).filter(r => r.trim());
-      recs.forEach(r => {
-        segments.push(
-          createSegment(meta, role, r, {
-            entities: extractEntities(r),
-            irregularities: extractIrregularities(r),
-            amounts: extractAmounts(r)
-          })
-        );
+  const enrich = (text, extra = {}) => ({
+    ...extra,
+    entities_mentioned: extractEntities(text),
+    irregularities: extractIrregularities(text),
+    amounts: extractAmounts(text),
+    dates: extractDates(text),
+    procurement_refs: extractProcurementRefs(text),
+    statutes_cited: extractStatutes(text),
+    follow_up_state: extractFollowUp(text)
+  });
+
+  if (sections.header) {
+    const text = sections.header.join('\n');
+    segments.push(createSegment(meta, 'header', text, enrich(text)));
+  }
+  if (sections.executive_summary) {
+    const text = sections.executive_summary.join('\n');
+    segments.push(createSegment(meta, 'executive_summary', text, enrich(text)));
+  }
+  if (sections.body) {
+    const bodyText = sections.body.join('\n');
+    const obsRegex = /Observation\s*n[°o]\s*(\d+)/gi;
+    const matches = [...bodyText.matchAll(obsRegex)];
+
+    if (!matches.length) {
+      chunkParagraphs(bodyText, 300, 700, 60, meta, 'body').forEach(seg => {
+        segments.push({
+          ...seg,
+          metadata: { ...seg.metadata, ...enrich(seg.text) }
+        });
       });
     } else {
-      segments.push(
-        createSegment(meta, role, text, {
-          entities: extractEntities(text),
-          irregularities: extractIrregularities(text),
-          amounts: extractAmounts(text)
-        })
-      );
+      if (matches[0].index > 0) {
+        const pre = bodyText.slice(0, matches[0].index);
+        chunkParagraphs(pre, 300, 700, 60, meta, 'body').forEach(seg => {
+          segments.push({
+            ...seg,
+            metadata: { ...seg.metadata, ...enrich(seg.text) }
+          });
+        });
+      }
+      matches.forEach((m, idx) => {
+        const start = m.index;
+        const end = matches[idx + 1]?.index ?? bodyText.length;
+        const block = bodyText.slice(start, end);
+        const obsId = m[1];
+        const afterHeading = block.slice(m[0].length).trim();
+
+        const responseIdx = afterHeading.search(/\bResponse\b/i);
+        const recommendationIdx = afterHeading.search(/\bRecommendation\b/i);
+        let obsEnd = afterHeading.length;
+        if (responseIdx !== -1 && responseIdx < obsEnd) obsEnd = responseIdx;
+        if (recommendationIdx !== -1 && recommendationIdx < obsEnd) obsEnd = recommendationIdx;
+        const obsText = afterHeading.slice(0, obsEnd).trim();
+
+        if (obsText) {
+          chunkParagraphs(obsText, 300, 700, 60, meta, 'observation').forEach(seg => {
+            segments.push({
+              ...seg,
+              metadata: {
+                ...seg.metadata,
+                ...enrich(seg.text, { observation_id: obsId })
+              }
+            });
+          });
+        }
+
+        let responseText = '';
+        let recBlock = '';
+        if (responseIdx !== -1) {
+          const rStart = responseIdx + afterHeading.slice(responseIdx).match(/Response/i)[0].length;
+          const rEnd =
+            recommendationIdx !== -1 && recommendationIdx > responseIdx
+              ? recommendationIdx
+              : afterHeading.length;
+          responseText = afterHeading.slice(rStart, rEnd).trim();
+        }
+        if (recommendationIdx !== -1) {
+          const recStart =
+            recommendationIdx + afterHeading.slice(recommendationIdx).match(/Recommendation/i)[0].length;
+          const recEnd =
+            responseIdx !== -1 && responseIdx > recommendationIdx
+              ? responseIdx
+              : afterHeading.length;
+          recBlock = afterHeading.slice(recStart, recEnd).trim();
+        }
+
+        if (responseText) {
+          chunkParagraphs(responseText, 300, 700, 60, meta, 'response').forEach(seg => {
+            segments.push({
+              ...seg,
+              metadata: {
+                ...seg.metadata,
+                ...enrich(seg.text, { observation_id: obsId, response_to: obsId })
+              }
+            });
+          });
+        }
+        if (recBlock) {
+          const recs = recBlock.split(/\n+(?=\s*(?:\d+\.|-))/).filter(r => r.trim());
+          if (!recs.length) recs.push(recBlock);
+          recs.forEach((rText, rIdx) => {
+            const cleaned = rText.replace(/^\s*(?:\d+\.|-)/, '').trim();
+            segments.push(
+              createSegment(
+                meta,
+                'recommendation',
+                cleaned,
+                enrich(cleaned, {
+                  observation_id: obsId,
+                  recommendation_id: `${obsId}-${rIdx + 1}`,
+                  response_to: obsId
+                })
+              )
+            );
+          });
+        }
+      });
     }
-  });
+  }
+  if (sections.annex_caption) {
+    const text = sections.annex_caption.join('\n');
+    segments.push(createSegment(meta, 'annex_caption', text, enrich(text)));
+  }
   return segments;
 }
 
