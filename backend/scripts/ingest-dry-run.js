@@ -60,8 +60,9 @@ async function run() {
     process.exit(1);
   }
 
-  const buffer = fs.readFileSync(path.resolve(file));
-  const { text } = await extractTextWithHelpers(buffer);
+  const resolved = path.resolve(file);
+  const buffer = fs.readFileSync(resolved);
+  const { text, tables } = await extractTextWithHelpers(buffer, path.dirname(resolved));
 
   const docType = type === 'auto' ? detectType(text) : type;
   console.log(`Document type: ${docType}`);
@@ -84,7 +85,7 @@ async function run() {
       segments = chunkings.cutDoctrine(text, meta);
       break;
     case 'public_report':
-      segments = chunkings.cutPublicReport(text, meta);
+      segments = chunkings.cutPublicReport(text, meta, tables);
       break;
     default:
       console.error('❌ Could not detect document type. Use --type to specify.');

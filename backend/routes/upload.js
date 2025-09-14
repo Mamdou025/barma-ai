@@ -35,7 +35,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     let parsedData;
     try {
-      parsedData = await extractTextWithHelpers(dataBuffer);
+      parsedData = await extractTextWithHelpers(dataBuffer, path.dirname(file.path));
     } catch (err) {
       fs.unlinkSync(file.path);
       if (err.message === 'Invalid PDF structure') {
@@ -135,7 +135,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         segments = cutDoctrine(parsedData.text, meta);
         break;
       case 'public_report':
-        segments = cutPublicReport(parsedData.text, meta);
+        segments = cutPublicReport(parsedData.text, meta, parsedData.tables);
         break;
       case 'statute':
       default:
