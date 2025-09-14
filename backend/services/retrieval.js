@@ -1,5 +1,5 @@
-import { openai } from '../utils/openaiClient.js';
-import { supabase } from '../utils/supabaseClient.js';
+const { openai } = require('../utils/openaiClient.js');
+const { supabase } = require('../utils/supabaseClient.js');
 
 /**
  * Classify query intent to narrow candidate document types and roles.
@@ -168,7 +168,7 @@ function buildCitationsMap(segments) {
  * @param {{query: string, filters?: object, topN?: number}} param0
  * @returns {Promise<{segments: object[], citations: object}>}
  */
-export async function retrieveByQuery({ query, filters = {}, topN = 10 }) {
+async function retrieveByQuery({ query, filters = {}, topN = 10 }) {
   const intent = classifyIntent(query);
   let segments = await hybridRetrieve(query, intent, filters);
   segments = await expandWithKG(segments, intent);
@@ -180,4 +180,4 @@ export async function retrieveByQuery({ query, filters = {}, topN = 10 }) {
   };
 }
 
-export default { retrieveByQuery };
+module.exports = { retrieveByQuery };
