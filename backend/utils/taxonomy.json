@@ -1,0 +1,25 @@
+{
+  "legal_domains": [
+    "droit administratif",
+    "droit civil",
+    "droit pénal",
+    "marchés publics"
+  ],
+  "themes": [
+    "rupture amiable",
+    "préavis",
+    "procédure",
+    "marchés publics"
+  ],
+  "irregularities": [
+    "procédure défaillante",
+    "détournement",
+    "surfacturation",
+    "absence de pièces",
+    "inefficacité",
+    "conflit d’intérêts",
+    "fractionnement",
+    "non-conformité",
+    "travaux non exécutés"
+  ]
+}
