@@ -6,6 +6,7 @@ const {
   articleMarkerRegex,
   alineaMarkerRegex
 } = require('../utils/regexes.js');
+const { resolveEntities } = require('./nlp/entityRegistry');
 
 function countTokens(text) {
   if (!text) return 0;
@@ -250,9 +251,10 @@ function cutPublicReport(docText, meta, tables = []) {
     if (role === 'recommendation') {
       const recs = text.split(/\n(?=\s*\d+\.|-)/).filter(r => r.trim());
       recs.forEach(r => {
+        const entitiesMentioned = resolveEntities(extractEntities(r));
         segments.push(
           createSegment(meta, role, r, {
-            entities: extractEntities(r),
+            entities_mentioned: entitiesMentioned,
             irregularities: extractIrregularities(r),
             amounts: extractAmounts(r)
           })
@@ -269,9 +271,10 @@ function cutPublicReport(docText, meta, tables = []) {
         segments.push(createSegment(meta, role, caption, extra));
       });
     } else {
+      const entitiesMentioned = resolveEntities(extractEntities(text));
       segments.push(
         createSegment(meta, role, text, {
-          entities: extractEntities(text),
+          entities_mentioned: entitiesMentioned,
           irregularities: extractIrregularities(text),
           amounts: extractAmounts(text)
         })
