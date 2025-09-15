@@ -5,7 +5,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { defaultSchema } from 'hast-util-sanitize';
 
-const ChatMessage = ({ message, isUser, timestamp, isHistory = false, isError = false }) => {
+const ChatMessage = ({ message, isUser, timestamp, isHistory = false, isError = false, sources = [] }) => {
   const formatTime = (ts) => {
     if (ts) {
       return new Date(ts).toLocaleString([], {
@@ -22,6 +22,13 @@ const ChatMessage = ({ message, isUser, timestamp, isHistory = false, isError = 
   const sanitizeSchema = {
     ...defaultSchema,
     tagNames: [...(defaultSchema.tagNames || []), 'mark'],
+  };
+
+  const handleChipClick = (docTitle, ref, marker) => {
+    const text = `:codex-terminal-citation[codex-terminal-citation]{line_range_start=379 line_range_end=418 terminal_chunk_id=${marker}}】 ${docTitle} — ${ref}`;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text);
+    }
   };
 
   return (
@@ -68,6 +75,21 @@ const ChatMessage = ({ message, isUser, timestamp, isHistory = false, isError = 
             {message}
           </ReactMarkdown>
         </div>
+
+        {!isUser && sources.length > 0 && (
+          <div className="message-sources">
+            {sources.map((src) => (
+              <button
+                key={src.marker}
+                className="source-chip"
+                onClick={() => handleChipClick(src.doc_title, src.ref, src.marker)}
+                title={`${src.doc_title} — ${src.ref}`}
+              >
+                {src.marker}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="message-time">
           {isHistory && <span className="history-indicator">📚 </span>}
