@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import ChatMessage from './ChatMessage';
+import { API_BASE_URL } from '../../utils/api';
 
 const ChatHistory = ({ documentId }) => {
   const [logs, setLogs] = useState([]);
@@ -20,7 +21,6 @@ const ChatHistory = ({ documentId }) => {
         setLoading(true);
         setError(null);
         
-        const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
         const response = await fetch(`${API_BASE_URL}/api/chatlogs/${documentId}`);
 
         if (!response.ok) {

@@ -1,4 +1,18 @@
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+
+export const fetchDocumentTypePreview = async (documentId, { signal } = {}) => {
+  const params = new URLSearchParams({ document_id: documentId });
+  const response = await fetch(`${API_BASE_URL}/segment-preview?${params.toString()}`, {
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to fetch document type preview');
+  }
+
+  return response.json();
+};
 
 export const api = {
   // Upload PDF - matches your /api/upload endpoint
@@ -130,6 +144,9 @@ export const api = {
     console.log('✅ Notes loaded:', result);
     return result;
   },
+
+  // Fetch document type preview
+  fetchDocumentTypePreview,
 };
 
 // Helper function to format file size
