@@ -1,5 +1,24 @@
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
+// Fetch a document type preview
+export const fetchDocumentTypePreview = async (
+  documentId,
+  { signal } = {}
+) => {
+  const response = await fetch(
+    `${API_BASE_URL}/api/segment-preview?document_id=${encodeURIComponent(documentId)}`,
+    { signal }
+  );
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to fetch document type preview');
+  }
+
+  return { type: data.type, human: data.human };
+};
+
 export const api = {
   // Upload PDF - matches your /api/upload endpoint
   uploadDocument: async (file) => {
