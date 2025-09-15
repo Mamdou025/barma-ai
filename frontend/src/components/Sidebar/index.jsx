@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import UploadButton from './UploadButton';
+import DocumentList from './DocumentList';
 import { api } from '../../utils/api';
 
 const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
@@ -86,10 +87,10 @@ const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
       </div>
 
       {error && (
-        <div className="error-message" style={{ 
-          color: '#d32f2f', 
-          padding: '8px', 
-          background: '#ffebee', 
+        <div className="error-message" style={{
+          color: '#d32f2f',
+          padding: '8px',
+          background: '#ffebee',
           borderRadius: '4px',
           marginBottom: '16px',
           fontSize: '14px'
@@ -98,35 +99,11 @@ const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
         </div>
       )}
 
-      <div className="documents-list">
-        {documents.length === 0 ? (
-          <div className="empty-state">
-            <p>📄 Pas encore de document </p>
-            <p>Téléchargez un PDF pour commencer</p>
-          </div>
-        ) : (
-          documents.map((doc) => (
-            <div
-              key={doc.id}
-              className={`document-item ${selectedDoc?.id === doc.id ? 'selected' : ''}`}
-              onClick={() => onSelectDoc(doc)}
-            >
-              <div className="doc-icon">📄</div>
-              <div className="doc-info">
-                <div className="document-list__title-row">
-                  <div className="document-list__title">{doc.title}</div>
-                  <span className={`doc-badge doc-badge--${doc.type || 'pdf'}`}>
-                    {(doc.type || 'pdf').toUpperCase()}
-                  </span>
-                </div>
-                <div className="doc-meta">
-                  PDF Document • {new Date(doc.uploaded_at).toLocaleDateString()}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      <DocumentList
+        documents={documents}
+        selectedDoc={selectedDoc}
+        onSelectDoc={onSelectDoc}
+      />
 
       {selectedDoc && (
         <div className="pdf-preview">
