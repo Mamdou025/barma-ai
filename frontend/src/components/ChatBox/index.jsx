@@ -64,9 +64,10 @@ const ChatBox = ({ selectedDoc }) => {
       const response = await api.sendMessage(userMessage, [selectedDoc.id], sessionIdRef.current);
       
       // Add AI response to chat
-      setMessages(prev => [...prev, { 
-        message: response.reply, 
-        isUser: false 
+      setMessages(prev => [...prev, {
+        message: response.reply,
+        isUser: false,
+        sources: response.sources_used || []
       }]);
       
     } catch (err) {
@@ -112,11 +113,12 @@ const ChatBox = ({ selectedDoc }) => {
           </div>
         ) : (
           messages.map((msg, index) => (
-            <ChatMessage 
-              key={index} 
-              message={msg.message} 
-              isUser={msg.isUser} 
+            <ChatMessage
+              key={index}
+              message={msg.message}
+              isUser={msg.isUser}
               isError={msg.isError}
+              sources={msg.sources}
             />
           ))
         )}
