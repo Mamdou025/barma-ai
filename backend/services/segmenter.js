@@ -1,7 +1,6 @@
 const {
   cutStatute,
-  cutJudgment,
-  cutPublicReport
+  cutJudgment
 } = require('./chunkings');
 const graphBuilder = require('../utils/graphBuilder');
 
@@ -164,8 +163,122 @@ function detectDocumentType(text = '') {
 
   return best;
 }
-const segmentRapportsPublics = (text, meta) => cutPublicReport(text, meta);
-const extractRapportEdges = (segments) => graphBuilder.extractAndBuildEdges(segments);
+
+/**
+ * Segment public reports into labelled sections.
+ * Detects common French headings and numeric fallback headings.
+ *
+ * @param {string} text
+ * @returns {Array<{id:string,label:string,text:string,meta:{heading:string,level:number,role:string}}>}
+ */
+function segmentRapportsPublics(text = '') {
+  const headingRegex =
+    /^\s*(Résumé exécutif|Méthodologie|Constats|Recommandations|Annexes|Annexe\s+\d+|\d+(?:\.\d+)*)(?:[\.\-\)]?[ \t][^\n]*)?$/gim;
+  const matches = [...text.matchAll(headingRegex)];
+  const rawSegments = [];
+
+  const levelAndRole = (h) => {
+    if (/^résumé exécutif/i.test(h)) return { level: 0, role: 'executive_summary' };
+    if (/^méthodologie/i.test(h)) return { level: 0, role: 'methodology' };
+    if (/^constats/i.test(h)) return { level: 0, role: 'findings' };
+    if (/^recommandations/i.test(h)) return { level: 0, role: 'recommendations' };
+    if (/^annexe/i.test(h)) return { level: 0, role: 'annex' };
+    if (/^\d+(?:\.\d+)*$/.test(h)) {
+      const depth = h.split('.').length;
+      if (depth === 1) return { level: 1, role: 'section' };
+      if (depth === 2) return { level: 2, role: 'subsection' };
+      return { level: 3, role: 'clause' };
+    }
+    return { level: 0, role: 'section' };
+  };
+
+  for (let i = 0; i < matches.length && rawSegments.length < 80; i++) {
+    const m = matches[i];
+    const fullHeading = m[0].trim();
+    const heading = m[1].trim().replace(/[\.\)-]$/, '');
+    const start = m.index + m[0].length;
+    const end = matches[i + 1] ? matches[i + 1].index : text.length;
+    const body = text.slice(start, end).trim();
+    const { level, role } = levelAndRole(heading);
+    rawSegments.push({ label: fullHeading, text: body, meta: { heading, level, role } });
+  }
+
+  const merged = [];
+  rawSegments.forEach((seg) => {
+    if (
+      merged.length &&
+      (merged[merged.length - 1].text.length < 300 || seg.text.length < 300)
+    ) {
+      const prev = merged[merged.length - 1];
+      prev.text = [prev.text, seg.label, seg.text].filter(Boolean).join('\n\n');
+    } else {
+      merged.push({ ...seg });
+    }
+  });
+
+  return merged.slice(0, 60).map((s, idx) => ({
+    id: `seg:rap:${idx + 1}`,
+    label: s.label,
+    text: s.text,
+    meta: s.meta
+  }));
+}
+
+/**
+ * Extract edges from public report segments.
+ * Captures neutral case citations, statute references and cross‑references
+ * such as “voir annexe 2”.
+ *
+ * @param {Array} segments
+ * @returns {{edges:Array, unresolved:Array}}
+ */
+function extractRapportEdges(segments = []) {
+  const edges = [];
+  const unresolved = [];
+  let edgeCount = 1;
+
+  const headingMap = Object.fromEntries(
+    segments.map((s) => [s.meta.heading.toLowerCase(), s.id])
+  );
+
+  const caseRegex = /\b\d{4}\s+[A-Z]{2,}\s+\d+\b/g;
+  const statuteRegex = /\b(?:art\.?|article)\s+\d+[A-Za-z0-9\-]*\b/gi;
+  const xrefRegex = /voir\s+(?:section\s+([\d\.]+)|annexe\s+(\d+))/gi;
+
+  const pushEdge = (src, type, surface, target = surface) => {
+    edges.push({
+      id: `edge:rap:${edgeCount++}`,
+      source: src,
+      target,
+      type,
+      surface: surface.replace(/\s+/g, ' ')
+    });
+  };
+
+  segments.forEach((seg) => {
+    const { id, text } = seg;
+    let m;
+
+    while ((m = caseRegex.exec(text))) {
+      pushEdge(id, 'case', m[0]);
+    }
+
+    while ((m = statuteRegex.exec(text))) {
+      pushEdge(id, 'statute', m[0]);
+    }
+
+    while ((m = xrefRegex.exec(text))) {
+      const ref = m[1] ? m[1] : m[2] ? `annexe ${m[2]}` : null;
+      const target = ref ? headingMap[ref.toLowerCase()] : null;
+      pushEdge(id, 'xref', m[0], target);
+      if (!target && ref) {
+        unresolved.push({ src: id, ref });
+      }
+    }
+  });
+
+  return { edges, unresolved };
+}
 
 /**
  * Segment a whole document and extract edges.
@@ -204,7 +317,7 @@ function segmentWholeDocument({ document_id, title = '', text }) {
       break;
     }
     case 'rapports_publics': {
-      segments = segmentRapportsPublics(text, meta);
+      segments = segmentRapportsPublics(text);
       ({ edges, unresolved } = extractRapportEdges(segments));
       break;
     }
