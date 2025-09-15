@@ -8,6 +8,28 @@ const rules = getRules();
 const router = express.Router();
 const USE_GRAPH = String(process.env.USE_GRAPH_RETRIEVAL || '').toLowerCase() === 'true';
 
+
+function hasBracketCitations(s) {
+  return /【\d+】/.test(s || '');
+}
+function extractContextMarkers(s) {
+  const set = new Set();
+  const re = /【(\d+)】/g;
+  let m;
+  while ((m = re.exec(s || ''))) set.add(Number(m[1]));
+  return Array.from(set).sort((a, b) => a - b);
+}
+function appendSourcesIfMissing(reply, contextText) {
+  if (hasBracketCitations(reply)) return reply;
+  const nums = extractContextMarkers(contextText);
+  if (!nums.length) return reply;
+  return reply + `\n\nSources : ` + nums.map(n => `【${n}】`).join(', ');
+}
+
+
+
+
+
 // Legacy util (used only in non-graph mode)
 function cosineSimilarity(a, b) {
   const dot = a.reduce((sum, ai, i) => sum + ai * b[i], 0);
@@ -86,22 +108,24 @@ if (USE_GRAPH) {
 const systemPrompt = `
 ${rulesText}
 
-Vous êtes un assistant juridique. Toutes vos affirmations **doivent** être strictement fondées sur le contexte fourni ci-dessous.
+Vous êtes un assistant juridique. Toutes vos affirmations **doivent** être strictement fondées sur le contexte fourni.
 
-Règles de fondation (OBLIGATOIRES) :
+RÈGLES OBLIGATOIRES
 1) N'utilisez **aucune** connaissance externe au contexte.
-2) Si une information demandée **n'apparaît pas** dans le contexte, écrivez clairement : "Les documents fournis ne traitent pas de ce point."
-3) Lorsque vous énoncez une règle, citez l'article/source avec les crochets du contexte (ex. 【1】) et le numéro de l'article (ex. art. 20).
-4) Évitez toute digression doctrinale/générale qui n'est pas dans le contexte.
+2) Si un point n'est **pas** dans le contexte, écrivez : "Les documents fournis ne traitent pas de ce point."
+3) À chaque règle ou conclusion, citez vos sources avec le format 【n】 (n = le numéro du bloc du contexte) et, si possible, l'article (ex. art. 20).
+4) Pas de digressions doctrinales/générales non présentes dans le contexte.
 `.trim();
+
 
 
     const fullMessage = vulgarisation
       ? "Mode vulgarisation activé. Réponds de manière simple.\n\n" + message
       : message;
 
-    const completion = await openai.chat.completions.create({
+const completion = await openai.chat.completions.create({
   model: 'gpt-3.5-turbo',
+  temperature: 0.2,            // ← tighter, follows format better
   messages: [
     { role: 'system', content: systemPrompt },
     { role: 'user', content:
@@ -111,14 +135,25 @@ ${contextText}
 TÂCHE :
 ${fullMessage}
 
-EXIGENCES DE SORTIE :
-- Appuyez chaque règle ou conclusion par une ou plusieurs références aux sources numérotées du contexte (ex. Sources : 【1】, 【3】).
-- Si le point n'est pas couvert par le contexte, écrivez : "Les documents fournis ne traitent pas de ce point." et n'ajoutez rien d'externe.
-` }
+FORMAT DE SORTIE (exemple) :
+- Préavis : 2 semaines (cadres : 3 semaines) — art. 10 【1】
+- Notification écrite, effet le lendemain — art. 20 【2】
+- Majoration : +1 semaine/an après 2 ans, max 6 — art. 11 【3】
+- Exceptions : faute grave (aucun préavis) — art. 12 【4】 ; période d’essai 3 mois — art. 12.1 【5】
+- Indemnité si non-respect du préavis — art. 30 【6】
+
+RÈGLES :
+- Chaque ligne DOIT contenir au moins un marqueur de source 【n】 correspondant au CONTEXTE.
+- Si le point n'est pas couvert par le contexte, écrivez : "Les documents fournis ne traitent pas de ce point." et n'ajoutez rien d'externe.`
+    }
   ]
 });
 
+
+
     const aiResponse = completion.choices[0].message.content;
+const finalReply = appendSourcesIfMissing(aiResponse, contextText);
+
     const responseTime = Date.now() - startTime;
 
     // 6. Sauvegarde du log
@@ -129,7 +164,7 @@ EXIGENCES DE SORTIE :
     session_id: session_id || null,
     document_id: document_ids[0],
     user_message: message,
-    ai_response: aiResponse,
+    ai_response: finalReply,
     response_time_ms: responseTime,
     user_ip: req.ip || req.connection?.remoteAddress,
     user_agent: req.get('User-Agent')
@@ -142,7 +177,7 @@ EXIGENCES DE SORTIE :
     }
 
     // 7. Réponse API
-    res.json({ reply: aiResponse, response_time_ms: responseTime, retrieval_mode, sources: selectedMeta });
+    res.json({ reply: finalReply, response_time_ms: responseTime, retrieval_mode });
 
 
   } catch (err) {

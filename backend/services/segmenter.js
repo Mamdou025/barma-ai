@@ -79,9 +79,14 @@ function scoreRapportsPublics(t) {
   return s;
 }
 
+// --- DETECTION (FR) — drop-in replacement for detectDocumentTypeFR ---
 function detectDocumentTypeFR({ title = '', text = '' }) {
-  const t = (title + '\n' + text).slice(0, 200000);
+  // Normalize / cap for perf
+  const raw = (title + '\n' + text).slice(0, 200000);
+  const t = raw.replace(/\r/g, '');
+  const lower = t.toLowerCase();
 
+  // Keep your existing scorers
   const scores = {
     lois_reglements:  scoreLoisReglements(t),
     jurisprudence:    scoreJurisprudence(t),
@@ -89,20 +94,69 @@ function detectDocumentTypeFR({ title = '', text = '' }) {
     rapports_publics: scoreRapportsPublics(t)
   };
 
+  // Cues for tie-breakers (don’t change your scorers; these are just hints)
+  const hasRoman          = /^[IVXLC]+\.\s+/m.test(t);
+  const hasBibliographie  = /\b(bibliographie|références)\b/i.test(t);
+  const hasResume         = /\brésumé\b/i.test(t);
+  const hasIntro          = /\bintroduction\b/i.test(t);
+
+  const hasExecSummary    = /\b(résumé exécutif|sommaire exécutif|synthèse)\b/i.test(lower);
+  const hasMethod         = /\b(méthodologie|méthode)\b/i.test(lower);
+  const hasFindings       = /\b(constats|résultats|analyse|diagnostic)\b/i.test(lower);
+  const hasRecom          = /\b(recommandations|préconisations|mesures correctives)\b/i.test(lower);
+  const hasAnnex          = /\bannexes?\b/i.test(lower);
+
+  const neutralCitation   = /\b20\d{2}\s+(scc|csc|fca|fc|qcca|qccs|qccq|onca|onsc|abca|bcca|bcsc|nbca|nsca|skca|mbca|peica|nlca|ca|cs)\s+\d+\b/i;
+  const judgeCueFR        = /\b(version française du jugement|le juge|la juge|les juges)\b/i;
+  const styleOfCause      = /\b(R\.?\s*c\.?|v\.)\b/;
+  const paraNums          = /^\[\d+\]/m;
+
+  // Softened thresholds so Doctrine/Rapports win when their anatomy is present
+  const minThreshold = {
+    lois_reglements:  3,
+    jurisprudence:    2,
+    doctrine:         2, // was 3
+    rapports_publics: 2  // was 3
+  };
+
+  // Argmax
   let bestType = 'unknown';
   let bestScore = 0;
   for (const [k, v] of Object.entries(scores)) {
     if (v > bestScore) { bestScore = v; bestType = k; }
   }
 
-  const minThreshold = {
-    lois_reglements:  3,
-    jurisprudence:    2,
-    doctrine:         3,
-    rapports_publics: 3
-  };
+  // Tie-breakers when scores tie or are close
+  const maxScore = Math.max(...Object.values(scores));
+  const tied = Object.entries(scores).filter(([_, v]) => v === maxScore).map(([k]) => k);
 
-  if (bestScore < (minThreshold[bestType] || 99)) bestType = 'unknown';
+  if (tied.length > 1) {
+    // Prefer Rapports publics when the classic report anatomy is present
+    if (tied.includes('rapports_publics') &&
+        (hasExecSummary && hasMethod && (hasFindings || hasRecom || hasAnnex))) {
+      bestType = 'rapports_publics';
+    }
+    // Prefer Doctrine when academic structure exists (roman numerals + intro/bibliography/resumé)
+    else if (tied.includes('doctrine') &&
+             ((hasRoman && (hasBibliographie || hasIntro || hasResume)) || (hasResume && hasIntro))) {
+      bestType = 'doctrine';
+    }
+    // Prefer Jurisprudence only with strong judicial cues
+    else if (tied.includes('jurisprudence') &&
+             (neutralCitation.test(t) || judgeCueFR.test(t) || (paraNums.test(t) && styleOfCause.test(t)))) {
+      bestType = 'jurisprudence';
+    }
+    // Prefer Lois & règlements when article/code structure is strong
+    else if (tied.includes('lois_reglements') && scores.lois_reglements >= 3) {
+      bestType = 'lois_reglements';
+    }
+    // else keep argmax default
+  }
+
+  // Enforce thresholds (but slightly relaxed for doctrine/rapports)
+  if (bestScore < (minThreshold[bestType] ?? 99)) {
+    bestType = 'unknown';
+  }
 
   const human = {
     lois_reglements:  'Lois & règlements',
@@ -114,6 +168,7 @@ function detectDocumentTypeFR({ title = '', text = '' }) {
 
   return { detected_type: bestType, detected_type_human: human[bestType], scores };
 }
+
 
 /* ---------------------------
    Utilitaires communs
