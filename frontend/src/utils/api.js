@@ -1,5 +1,8 @@
 export const API_BASE_URL = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
 
+// UUID regex (same as backend)
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export const fetchDocumentTypePreview = async (documentId, { signal } = {}) => {
   const params = new URLSearchParams({ document_id: documentId });
   const response = await fetch(`${API_BASE_URL}/api/segment-preview?${params.toString()}`, {

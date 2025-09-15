@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchDocumentTypePreview } from '../../utils/api';
+import { fetchDocumentTypePreview, UUID_RE } from '../../utils/api';
 import DocTypeBadge from './DocTypeBadge';
 
 const CACHE_KEY = 'barmai.docTypeCache.v1';
@@ -45,6 +45,11 @@ const DocumentList = ({ documents, selectedDoc, onSelectDoc }) => {
     const seeded = {};
     const toFetch = [];
     for (const doc of documents) {
+      if (!UUID_RE.test(doc.id)) {
+        seeded[doc.id] = { loading: false, error: true };
+        alert('Upload failed—please retry');
+        continue;
+      }
       if (cache[doc.id]) {
         const { type, human, ts } = cache[doc.id];
         seeded[doc.id] = { type, human, ts, loading: false, error: null };
