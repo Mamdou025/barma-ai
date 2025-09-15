@@ -529,3 +529,35 @@
 
 /* Improve timestamp contrast in assistant bubble */
 .ai-message .message-time { color: #6b7280; }
+
+/* Message Sources */
+.message-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.source-chip {
+  padding: 2px 8px;
+  background: #f1f3f4;
+  border: 1px solid #e1e5e9;
+  border-radius: 9999px;
+  font-size: 12px;
+  color: #202124;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.source-chip:hover {
+  background: #e8eaed;
+}
+
+.source-chip:active {
+  background: #dadce0;
+}
+
+.user-message .message-sources {
+  display: none;
+}
+
