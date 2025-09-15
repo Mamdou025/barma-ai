@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchDocumentTypePreview } from '../../utils/api';
+import DocTypeBadge from './DocTypeBadge';
 
 const CACHE_KEY = 'barmai.docTypeCache.v1';
 const TTL_MS = 24 * 60 * 60 * 1000; // 24h
@@ -42,14 +43,18 @@ const DocumentList = ({ documents, selectedDoc, onSelectDoc }) => {
 
     const cache = readCache();
     const seeded = {};
+    const toFetch = [];
     for (const doc of documents) {
       if (cache[doc.id]) {
-        seeded[doc.id] = { type: cache[doc.id].type, human: cache[doc.id].human };
+        const { type, human, ts } = cache[doc.id];
+        seeded[doc.id] = { type, human, ts, loading: false, error: null };
+      } else {
+        seeded[doc.id] = { loading: true };
+        toFetch.push(doc);
       }
     }
     setDocTypes(seeded);
 
-    const toFetch = documents.filter(doc => !cache[doc.id]);
     if (toFetch.length === 0) return;
 
     let isCancelled = false;
@@ -69,15 +74,22 @@ const DocumentList = ({ documents, selectedDoc, onSelectDoc }) => {
           const entry = {
             type: res.detected_type || 'pdf',
             human: res.detected_type_human || 'PDF Document',
-            ts: Date.now()
+            ts: Date.now(),
           };
-          setDocTypes(prev => ({ ...prev, [doc.id]: { type: entry.type, human: entry.human } }));
+          setDocTypes(prev => ({
+            ...prev,
+            [doc.id]: { ...entry, loading: false, error: null },
+          }));
           cache[doc.id] = entry;
           writeCache(cache);
         })
         .catch(err => {
           if (err.name !== 'AbortError') {
             console.error('Error fetching document type preview', err);
+            setDocTypes(prev => ({
+              ...prev,
+              [doc.id]: { ...prev[doc.id], loading: false, error: true },
+            }));
           }
         })
         .finally(() => {
@@ -97,9 +109,6 @@ const DocumentList = ({ documents, selectedDoc, onSelectDoc }) => {
     };
   }, [documents]);
 
-  const getType = (doc) => docTypes[doc.id]?.type || doc.type || 'pdf';
-  const getTypeHuman = (doc) => docTypes[doc.id]?.human || 'PDF Document';
-
   return (
     <div className="documents-list">
       {documents.length === 0 ? (
@@ -108,26 +117,29 @@ const DocumentList = ({ documents, selectedDoc, onSelectDoc }) => {
           <p>Téléchargez un PDF pour commencer</p>
         </div>
       ) : (
-        documents.map((doc) => (
-          <div
-            key={doc.id}
-            className={`document-item ${selectedDoc?.id === doc.id ? 'selected' : ''}`}
-            onClick={() => onSelectDoc(doc)}
-          >
-            <div className="doc-icon">📄</div>
-            <div className="doc-info">
-              <div className="document-list__title-row">
-                <div className="document-list__title">{doc.title}</div>
-                <span className={`doc-badge doc-badge--${getType(doc)}`}>
-                  {getType(doc).toUpperCase()}
-                </span>
-              </div>
-              <div className="doc-meta">
-                {getTypeHuman(doc)} • {new Date(doc.uploaded_at).toLocaleDateString()}
+        documents.map((doc) => {
+          const t = docTypes[doc.id] || {};
+          const type = t.type || doc.type || 'pdf';
+          const human = t.human || 'PDF Document';
+          return (
+            <div
+              key={doc.id}
+              className={`document-item ${selectedDoc?.id === doc.id ? 'selected' : ''}`}
+              onClick={() => onSelectDoc(doc)}
+            >
+              <div className="doc-icon">📄</div>
+              <div className="doc-info">
+                <div className="document-list__title-row">
+                  <div className="document-list__title">{doc.title}</div>
+                  <DocTypeBadge type={type} human={human} loading={t.loading} error={t.error} />
+                </div>
+                <div className="doc-meta">
+                  {human} • {new Date(doc.uploaded_at).toLocaleDateString()}
+                </div>
               </div>
             </div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );
