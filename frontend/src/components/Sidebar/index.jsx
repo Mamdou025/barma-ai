@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import UploadButton from './UploadButton';
+import DocTypeBadge from './DocTypeBadge';
 import { api } from '../../utils/api';
 
 const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
@@ -115,9 +116,7 @@ const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
               <div className="doc-info">
                 <div className="document-list__title-row">
                   <div className="document-list__title">{doc.title}</div>
-                  <span className={`doc-badge doc-badge--${doc.type || 'pdf'}`}>
-                    {(doc.type || 'pdf').toUpperCase()}
-                  </span>
+                  <DocTypeBadge type={doc.type} />
                 </div>
                 <div className="doc-meta">
                   PDF Document • {new Date(doc.uploaded_at).toLocaleDateString()}
