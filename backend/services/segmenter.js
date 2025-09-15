@@ -214,6 +214,7 @@ function segmentLoisReglements(text) {
   return segments;
 }
 // --- Edges: renvois internes "voir article X", "articles A à B" (Lois & règlements) ---
+// --- Edges: renvois internes "voir article X", "articles A à B" (Lois & règlements) ---
 function extractLoisEdges(segments) {
   // index rapide: numéro d'article -> id de segment
   const idByNumber = {};
@@ -237,7 +238,9 @@ function extractLoisEdges(segments) {
     while ((m = reSingle.exec(body)) !== null) {
       const toNum = m[1];                 // ex. "20" ou "12.3"
       const alinea = m[2] || null;        // ex. "3" si "alinéa 3" trouvé
-      const surface = m[0];
+      let surface = m[0];
+      surface = surface.replace(/\s+/g, ' ').trim();  // <<< NORMALISATION
+
       const toId = idByNumber[toNum] || null;
 
       edges.push({
@@ -253,7 +256,9 @@ function extractLoisEdges(segments) {
     while ((m = reRange.exec(body)) !== null) {
       const a = m[1];     // début
       const b = m[2];     // fin (peut contenir .3)
-      const surface = m[0];
+      let surface = m[0];
+      surface = surface.replace(/\s+/g, ' ').trim();  // <<< NORMALISATION
+
       edges.push({
         from: fromSeg.id,
         to: null,         // plage -> pas un seul segment cible
@@ -266,6 +271,7 @@ function extractLoisEdges(segments) {
 
   return edges;
 }
+
 
 /* ---------------------------
    Segmentation (Jurisprudence)
