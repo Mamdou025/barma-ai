@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import ChatMessage from './ChatMessage';
-import { API_BASE_URL } from '../../utils/api';
+import { API_BASE_URL, UUID_RE } from '../../utils/api';
 
 const ChatHistory = ({ documentId }) => {
   const [logs, setLogs] = useState([]);
@@ -14,6 +14,12 @@ const ChatHistory = ({ documentId }) => {
     const fetchLogs = async () => {
       if (!documentId) {
         setLoading(false);
+        return;
+      }
+      if (!UUID_RE.test(documentId)) {
+        setLoading(false);
+        setError('Upload failed—please retry');
+        alert('Upload failed—please retry');
         return;
       }
 
