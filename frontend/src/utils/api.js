@@ -2,7 +2,7 @@ export const API_BASE_URL = process.env.REACT_APP_API_BASE || 'http://localhost:
 
 export const fetchDocumentTypePreview = async (documentId, { signal } = {}) => {
   const params = new URLSearchParams({ document_id: documentId });
-  const response = await fetch(`${API_BASE_URL}/segment-preview?${params.toString()}`, {
+  const response = await fetch(`${API_BASE_URL}/api/segment-preview?${params.toString()}`, {
     signal,
   });
 
@@ -11,7 +11,12 @@ export const fetchDocumentTypePreview = async (documentId, { signal } = {}) => {
     throw new Error(errorData.error || 'Failed to fetch document type preview');
   }
 
-  return response.json();
+  const json = await response.json();
+
+  return {
+    type: json.detected_type || 'unknown',
+    human: json.detected_type_human || 'Inconnu',
+  };
 };
 
 export const api = {
