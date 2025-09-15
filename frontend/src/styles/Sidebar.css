@@ -157,3 +157,70 @@
   min-height: 400px;
   width: 100%;
 }
+
+/* Document badge styles */
+.doc-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 10px;
+  border-radius: 9999px;
+  margin-left: 8px;
+  border: 1px solid transparent;
+}
+
+/* Loading and error variants */
+.doc-badge--loading {
+  background: #e0e0e0;
+  border-color: #e0e0e0;
+  color: #5f6368;
+}
+
+.doc-badge--error {
+  background: #ffebee;
+  border-color: #d32f2f;
+  color: #b71c1c;
+}
+
+/* Document type variants */
+.doc-badge--pdf {
+  background: #fce8e6;
+  border-color: #ea4335;
+  color: #b31412;
+}
+
+.doc-badge--doc {
+  background: #e8f0fe;
+  border-color: #4285f4;
+  color: #174ea6;
+}
+
+.doc-badge--xls {
+  background: #e6f4ea;
+  border-color: #34a853;
+  color: #0f9d58;
+}
+
+.doc-badge--ppt {
+  background: #fef7e0;
+  border-color: #f9ab00;
+  color: #b06000;
+}
+
+.doc-badge--txt {
+  background: #f1f3f4;
+  border-color: #5f6368;
+  color: #3c4043;
+}
+
+/* Document title row */
+.document-list__title-row {
+  display: flex;
+  align-items: center;
+}
+
+.document-list__title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
