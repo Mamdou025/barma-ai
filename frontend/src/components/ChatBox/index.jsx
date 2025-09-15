@@ -148,7 +148,7 @@ const ChatBox = ({ selectedDoc }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={selectedDoc ? "Posez une question sur ce document…" : "Sélectionnez un document pour commencer"}
+            placeholder={selectedDoc ? "Ask a question about this document..." : "Select a document to start chatting"}
             disabled={!selectedDoc || loading}
             rows={1}
             className="chat-input"
@@ -158,7 +158,7 @@ const ChatBox = ({ selectedDoc }) => {
             disabled={!input.trim() || !selectedDoc || loading}
             className="send-button"
           >
-            {loading ? '⏳' : '➡️'}
+            {loading ? '⏳' : '🚀'}
           </button>
         </div>
       </div>

@@ -183,8 +183,7 @@ FORMAT DE SORTIE (exemple) :
 
 RÈGLES :
 - Chaque ligne DOIT contenir au moins un marqueur de source 【n】 correspondant au CONTEXTE.
-- Si le point n'est pas couvert par le contexte, écrivez : "Les documents fournis ne traitent pas de ce point." et n'ajoutez rien d'externe.
-- Mettez en évidence les règles/conclusions clés avec <mark> … </mark>.`
+- Si le point n'est pas couvert par le contexte, écrivez : "Les documents fournis ne traitent pas de ce point." et n'ajoutez rien d'externe.`
     }
   ]
 });
