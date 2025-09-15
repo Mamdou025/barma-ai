@@ -72,8 +72,8 @@ const DocumentList = ({ documents, selectedDoc, onSelectDoc }) => {
         .then(res => {
           if (isCancelled) return;
           const entry = {
-            type: res.detected_type || 'pdf',
-            human: res.detected_type_human || 'PDF Document',
+            type: res.type || 'unknown',
+            human: res.human || 'Inconnu',
             ts: Date.now(),
           };
           setDocTypes(prev => ({
