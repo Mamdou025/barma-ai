@@ -20,7 +20,7 @@ const UploadButton = ({ onUpload }) => {
       
       // Transform response to match your component's expected format
       const newDoc = {
-        id: result.document?.id || Date.now(), // Use actual ID from backend
+        id: result.id || result.document?.id, // Use actual ID from backend
         title: file.name,
         storage_url: result.public_url,
         uploaded_at: new Date().toISOString(),
