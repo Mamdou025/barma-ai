@@ -1,10 +1,110 @@
 const {
   cutStatute,
   cutJudgment,
-  cutDoctrine,
   cutPublicReport
 } = require('./chunkings');
 const graphBuilder = require('../utils/graphBuilder');
+
+/**
+ * Split doctrinal texts into hierarchical segments based on common
+ * French headings.
+ *
+ * Headings handled:
+ *   Résumé, I., A., 1.1, Conclusion, Bibliographie
+ *
+ * @param {string} text
+ * @returns {Array<{id:string,label:string,text:string,meta:{heading:string,level:number,role:string}}>} 
+ */
+function segmentDoctrine(text = '') {
+  const headingRegex =
+    /^\s*(Résumé|Conclusion|Bibliographie|[IVXLCDM]+\.|[A-Z]\.|\d+(?:\.\d+)+)\s.*$/gim;
+  const matches = [...text.matchAll(headingRegex)];
+  const segments = [];
+
+  const levelAndRole = (h) => {
+    if (/^résumé/i.test(h)) return { level: 0, role: 'abstract' };
+    if (/^conclusion/i.test(h)) return { level: 0, role: 'conclusion' };
+    if (/^bibliographie/i.test(h)) return { level: 0, role: 'bibliography' };
+    if (/^[IVXLCDM]+\.$/i.test(h)) return { level: 1, role: 'section' };
+    if (/^[A-Z]\.$/.test(h)) return { level: 2, role: 'subsection' };
+    return { level: 3, role: 'clause' };
+  };
+
+  for (let i = 0; i < matches.length && segments.length < 60; i++) {
+    const m = matches[i];
+    const fullHeading = m[0].trim();
+    const heading = m[1].trim();
+    const start = m.index + m[0].length;
+    const end = matches[i + 1] ? matches[i + 1].index : text.length;
+    const body = text.slice(start, end).trim();
+    const { level, role } = levelAndRole(heading);
+
+    segments.push({
+      id: `seg:doc:${segments.length + 1}`,
+      label: fullHeading,
+      text: body,
+      meta: { heading, level, role }
+    });
+  }
+
+  return segments;
+}
+
+/**
+ * Extract edges from doctrinal segments.
+ * Captures neutral case citations, statute references and cross‑references
+ * such as “voir section II”.
+ *
+ * @param {Array} segments
+ * @returns {{edges:Array, unresolved:Array}}
+ */
+function extractDoctrineEdges(segments = []) {
+  const edges = [];
+  const unresolved = [];
+  let edgeCount = 1;
+
+  const headingMap = Object.fromEntries(
+    segments.map((s) => [s.meta.heading.replace(/\.$/, '').toLowerCase(), s.id])
+  );
+
+  const caseRegex = /\b\d{4}\s+[A-Z]{2,}\s+\d+\b/g; // neutral citations
+  const statuteRegex = /\b(?:art\.?|article)\s+\d+[A-Za-z0-9\-]*\b/gi;
+  const xrefRegex = /voir\s+section\s+([IVXLCDM]+|[A-Z]|\d+(?:\.\d+)+)/gi;
+
+  const pushEdge = (src, type, surface, target = surface) => {
+    edges.push({
+      id: `edge:doc:${edgeCount++}`,
+      source: src,
+      target,
+      type,
+      surface: surface.replace(/\s+/g, ' ')
+    });
+  };
+
+  segments.forEach((seg) => {
+    const { id, text } = seg;
+
+    let m;
+    while ((m = caseRegex.exec(text))) {
+      pushEdge(id, 'case', m[0]);
+    }
+
+    while ((m = statuteRegex.exec(text))) {
+      pushEdge(id, 'statute', m[0]);
+    }
+
+    while ((m = xrefRegex.exec(text))) {
+      const ref = m[1].replace(/\.$/, '').toLowerCase();
+      const target = headingMap[ref] || null;
+      pushEdge(id, 'xref', m[0], target);
+      if (!target) {
+        unresolved.push({ src: id, ref: m[1] });
+      }
+    }
+  });
+
+  return { edges, unresolved };
+}
 
 /**
  * Detect the document type based on French cues.
@@ -64,9 +164,6 @@ function detectDocumentType(text = '') {
 
   return best;
 }
-
-const segmentDoctrine = (text, meta) => cutDoctrine(text, meta);
-const extractDoctrineEdges = (segments) => graphBuilder.extractAndBuildEdges(segments);
 const segmentRapportsPublics = (text, meta) => cutPublicReport(text, meta);
 const extractRapportEdges = (segments) => graphBuilder.extractAndBuildEdges(segments);
 
@@ -102,7 +199,7 @@ function segmentWholeDocument({ document_id, title = '', text }) {
       break;
     }
     case 'doctrine': {
-      segments = segmentDoctrine(text, meta);
+      segments = segmentDoctrine(text);
       ({ edges, unresolved } = extractDoctrineEdges(segments));
       break;
     }
