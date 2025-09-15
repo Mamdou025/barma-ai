@@ -119,10 +119,11 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     }
 
     fs.unlinkSync(file.path);
-    res.json({ 
-      message: 'PDF parsed, embedded, and uploaded successfully', 
-      public_url: publicURL, 
-      chunks: chunks.length 
+    res.json({
+      message: 'PDF parsed, embedded, and uploaded successfully',
+      public_url: publicURL,
+      chunks: chunks.length,
+      document: { id: docInsert.id }
     });
 
   } catch (err) {
