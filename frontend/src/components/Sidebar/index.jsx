@@ -113,7 +113,12 @@ const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
             >
               <div className="doc-icon">📄</div>
               <div className="doc-info">
-                <div className="doc-title">{doc.title}</div>
+                <div className="document-list__title-row">
+                  <div className="document-list__title">{doc.title}</div>
+                  <span className={`doc-badge doc-badge--${doc.type || 'pdf'}`}>
+                    {(doc.type || 'pdf').toUpperCase()}
+                  </span>
+                </div>
                 <div className="doc-meta">
                   PDF Document • {new Date(doc.uploaded_at).toLocaleDateString()}
                 </div>
