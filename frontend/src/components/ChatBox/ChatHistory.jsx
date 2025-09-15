@@ -137,11 +137,12 @@ const ChatHistory = ({ documentId }) => {
               </div>
               {historyMessages.map((msg) => (
                 <div key={msg.id} className="history-message-wrapper">
-                  <ChatMessage 
-                    message={msg.message} 
+                  <ChatMessage
+                    message={msg.message}
                     isUser={msg.isUser}
                     timestamp={msg.timestamp}
                     isHistory={true}
+                    sources={msg.sources}
                   />
                   {msg.responseTime && !msg.isUser && (
                     <div className="response-time-badge">
