@@ -45,6 +45,18 @@ export const api = {
     return response.json();
   },
 
+  // Get document type - matches your /api/documents/:id/type endpoint
+  getDocumentType: async (documentId) => {
+    const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}/type`);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to fetch document type');
+    }
+
+    return response.json();
+  },
+
   // Chat with AI - matches your /api/chat endpoint
   sendMessage: async (message, documentIds, sessionId, filters = {}) => {
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
