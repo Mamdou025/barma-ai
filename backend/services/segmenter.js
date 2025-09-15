@@ -31,37 +31,60 @@ function scoreLoisReglements(t) {
 }
 
 function scoreJurisprudence(t) {
-  const neutralCitation = new RegExp(
-    String.raw`\b20\d{2}\s+(CSC|SCC|QCCA|QCCS|QCCQ|ONCA|ONSC|FCA|CF|CA|CS|BCCA|BCSC|ABCA|NBCA|NSCA|SKCA|MBCA|PEICA|NLCA)\s+\d+\b`
-  );
-  const tests = [
-    neutralCitation,                         // ex: 2017 CSC 45
-    /\b(R\.?\s*c\.?| c\. | v\.)\b/,          // "R. c." / "c." / "v."
-    /\b(Le juge|La juge|Les juges)\b/i,
-    /\b(Motifs|Analyse|Dispositif|Arrêt|Jugement|Conclusion)\b/i,
-    /(^|\n)\s*\[\d+\]\s+/                    // ¶ [1], [2], ...
-  ];
   let s = 0;
-  for (const re of tests) if (re.test(t)) s++;
-  if (/\b(Le juge|La juge|Les juges)\b/i.test(t) && /\b(jugement|arrêt)\b/i.test(t)) s++;
+
+  const patterns = [
+    // Headings and document types
+    /\b(d[ée]cision|arr[êe]t|jugement)\s+n[°o]\s*[\w\-\/]+/i,
+    // Institutions (civil-law / francophone)
+    /\bconseil constitutionnel\b/i,
+    /\bcour de cassation\b/i,
+    /\bcour d[’']appel\b/i,
+    /\btribunal (administratif|de grande instance|correctionnel|judiciaire)\b/i,
+    // Formulaic phrases in FR judgments
+    /\bconsid[ée]rant\b/i,
+    /\bpar ces motifs\b/i,
+    /\bd[ée]cide\b/i,
+    /(^|\n)\s*vu\s+(la|le|les)\b/i,
+    /(^|\n)\s*attendu que\b/i,
+    // Paragraph numbering styles
+    /^\[\d+\]/m,        // [1], [2]…
+    /^\d+\.\s/m         // 1. 2. …
+  ];
+
+  patterns.forEach(re => { if (re.test(t)) s += 1; });
+
+  // Extra weight for strong judicial combos
+  if (/\bconsid[ée]rant\b/i.test(t) && /\bd[ée]cide\b/i.test(t)) s += 1;
+  if (/\bconseil constitutionnel\b/i.test(t)) s += 2;
+
   return s;
 }
 
+
 function scoreDoctrine(t) {
-  const tests = [
-    /\b(Résumé|Abstract|Mots[-\s]?clés|Mots clés)\b/i,
-    /\b(Introduction|Conclusion|Bibliographie|Notes|Remerciements)\b/i,
-    /\b(Revue|Dalloz|LexisNexis|Lextenso|CanLII\s*\(commentaire\)|Cahiers|Presses)\b/i,
-    /\b(doi:|ISSN|Vol\.|No\.|pp\.)\b/i,
-    /\b(par\s+[A-ZÉÈÀÂÎÔÛ][\wÉÈÀÂÎÔÛ\-']+(?:\s+[A-ZÉÈÀÂÎÔÛ][\wÉÈÀÂÎÔÛ\-']+)*)\b/,
-    /\b(Professeur|Maître|Avocat|LL\.M\.|Ph\.D\.|Université)\b/i
+  let score = 0;
+
+  const academicCues = [
+    /\brésumé\b/i,
+    /\babstract\b/i,
+    /\bintroduction\b/i,
+    /\bconclusion\b/i,
+    /\b(bibliographie|références)\b/i,
+    /^[IVXLC]+\.\s+/m,  // roman numeral headings
+    /^[A-Z]\.\s+/m      // A. B. subheadings
   ];
-  let s = 0;
-  for (const re of tests) if (re.test(t)) s++;
-  const biblioRefs = (t.match(/\b(ibid\.|op\. cit\.|id\.)\b/gi) || []).length;
-  if (biblioRefs >= 2) s++;
-  return s;
+
+  let hits = 0;
+  academicCues.forEach(re => { if (re.test(t)) hits += 1; });
+  if (hits >= 2) score += hits;          // require at least 2 real academic signals
+
+  // If strong judicial cues exist, downweight doctrine to avoid false positives
+  if (/\b(consid[ée]rant|par ces motifs|d[ée]cide)\b/i.test(t)) score = Math.max(0, score - 2);
+
+  return score;
 }
+
 
 function scoreRapportsPublics(t) {
   const tests = [
@@ -115,7 +138,7 @@ function detectDocumentTypeFR({ title = '', text = '' }) {
   const minThreshold = {
     lois_reglements:  3,
     jurisprudence:    2,
-    doctrine:         2, // was 3
+    doctrine:         3, 
     rapports_publics: 2  // was 3
   };
 
