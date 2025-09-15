@@ -46,17 +46,22 @@ export const api = {
   },
 
   // Chat with AI - matches your /api/chat endpoint
-  sendMessage: async (message, documentIds) => {
+  // sessionId parameter is optional. If provided, it's sent in the payload
+  sendMessage: async (message, documentIds, sessionId) => {
+    const payload = {
+      message: message,
+      document_ids: documentIds, // Your backend expects this format
+    };
+    if (sessionId) {
+      payload.sessionid = sessionId;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        message: message  ,
-        document_ids: documentIds, // Your backend expects this format
-        sessionid : "12122212"
-      }),
+      body: JSON.stringify(payload),
     });
     
     if (!response.ok) {
