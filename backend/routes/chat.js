@@ -26,6 +26,29 @@ function appendSourcesIfMissing(reply, contextText) {
   return reply + `\n\nSources : ` + nums.map(n => `【${n}】`).join(', ');
 }
 
+function buildNumberedContextAndSources({ chunks, docsById }) {
+  const blocks = [];
+  const sourcesUsed = [];
+
+  chunks.forEach((chunk, i) => {
+    const marker = i + 1;
+    const doc = docsById[chunk.document_id] || {};
+    const docTitle = doc.title || `Document ${chunk.document_id}`;
+    const header = `:codex-terminal-citation[codex-terminal-citation]{line_range_start=64 line_range_end=70 terminal_chunk_id=${marker}} ${docTitle} — chunk ${chunk.chunk_index}`;
+
+    blocks.push(`${header}\n${chunk.content}`);
+    sourcesUsed.push({
+      marker,
+      doc_id: chunk.document_id,
+      doc_title: docTitle,
+      ref: String(chunk.chunk_index),
+      text_preview: chunk.content.slice(0, 100)
+    });
+  });
+
+  return { contextText: blocks.join('\n\n'), sourcesUsed };
+}
+
 
 
 
@@ -49,10 +72,10 @@ router.post('/chat', async (req, res) => {
   try {
     let contextText = '';
     let retrieval_mode = USE_GRAPH ? 'graph' : 'chunks';
+    let sourcesUsed = [];
 
-    let selectedMeta = [];
 if (USE_GRAPH) {
-  const { contextText: ctx, selected } = await retrieveGraph({
+  const { contextText: ctx } = await retrieveGraph({
     message,
     document_ids,
     maxSegments: 8,
@@ -60,7 +83,6 @@ if (USE_GRAPH) {
     maxCharsPerSegment: 1200
   });
   contextText = ctx || '';
-  selectedMeta = selected; // ← add this
 }
  else {
       // -------------------------
@@ -99,7 +121,24 @@ if (USE_GRAPH) {
         .sort((a, b) => b.similarity - a.similarity)
         .slice(0, 5);
 
-      contextText = topChunks.map(c => `Chunk ${c.chunk_index} (doc ${c.document_id}):\n${c.content}`).join('\n\n');
+      const docIds = topChunks.map(c => c.document_id);
+      const { data: docs, error: docsErr } = await supabase
+        .from('documents')
+        .select('id, title')
+        .in('id', docIds);
+      if (docsErr) {
+        console.error('❌ Error fetching document titles:', docsErr.message);
+        return res.status(500).json({ error: 'Error fetching document titles' });
+      }
+      const docsById = {};
+      (docs || []).forEach(d => {
+        docsById[d.id] = d;
+      });
+
+      ({ contextText, sourcesUsed } = buildNumberedContextAndSources({
+        chunks: topChunks,
+        docsById
+      }));
     }
 
     // 5. Chargement des règles PAN
@@ -178,7 +217,7 @@ const finalReply = appendSourcesIfMissing(aiResponse, contextText);
     }
 
     // 7. Réponse API
-    res.json({ reply: finalReply, response_time_ms: responseTime, retrieval_mode });
+    res.json({ reply: finalReply, response_time_ms: responseTime, retrieval_mode, sources_used: sourcesUsed });
 
 
   } catch (err) {
