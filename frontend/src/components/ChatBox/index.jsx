@@ -60,8 +60,12 @@ const ChatBox = ({ selectedDoc }) => {
     setLoading(true);
 
     try {
+      const sessionId = sessionIdRef.current;
+      if (!sessionId) {
+        throw new Error('Missing sessionId');
+      }
       // Call your real API
-      const response = await api.sendMessage(userMessage, [selectedDoc.id], sessionIdRef.current);
+      const response = await api.sendMessage(userMessage, [selectedDoc.id], sessionId);
       
       // Add AI response to chat
       setMessages(prev => [...prev, {
