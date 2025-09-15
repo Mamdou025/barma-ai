@@ -75,7 +75,7 @@ export const api = {
       document_ids: documentIds, // Your backend expects this format
     };
     if (sessionId) {
-      payload.sessionid = sessionId;
+      payload.session_id = sessionId;
     }
 
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
