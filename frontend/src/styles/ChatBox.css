@@ -416,3 +416,116 @@
     transform: translateY(0);
   }
 }
+
+/* ------ ChatGPT-like bubble polish ------ */
+.chat-messages {
+  background: #fafafa;
+}
+
+/* Limit bubble width for readability */
+.message-content {
+  max-width: min(75%, 780px);
+  border: 1px solid transparent;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+}
+
+/* Assistant bubble: clean white with subtle border */
+.ai-message .message-content {
+  background: #ffffff;
+  border-color: #e5e7eb; /* gray-200 */
+  color: #1f2937;       /* gray-800 */
+}
+
+/* User bubble: keep your blue, slightly softened */
+.user-message .message-content {
+  background: #3b82f6;  /* blue-500 */
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+/* Markdown typography inside bubbles */
+.markdown-body {
+  font-size: 15px;
+  line-height: 1.65;
+  color: inherit;
+}
+
+/* Headings */
+.markdown-body .md-h1 { font-size: 1.375rem; line-height: 1.3; margin: 0 0 10px; font-weight: 700; }
+.markdown-body .md-h2 { font-size: 1.2rem;   line-height: 1.35; margin: 16px 0 8px; font-weight: 700; }
+.markdown-body .md-h3 { font-size: 1.05rem;  line-height: 1.4;  margin: 14px 0 6px;  font-weight: 600; }
+
+/* Paragraphs & spacing */
+.markdown-body .md-p { margin: 8px 0; }
+.markdown-body .md-ul,
+.markdown-body .md-ol { margin: 8px 0 8px 20px; }
+.markdown-body .md-li { margin: 4px 0; }
+
+/* Links */
+.markdown-body .md-a {
+  color: #2563eb; /* blue-600 */
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(37,99,235,0.5);
+}
+.markdown-body .md-a:hover { border-bottom-style: solid; }
+
+/* Blockquote */
+.markdown-body .md-quote {
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-left: 4px solid #e5e7eb;
+  border-radius: 8px;
+  color: #374151;
+}
+
+/* Code */
+.markdown-body .md-code-inline {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.95em;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #111827;
+}
+.markdown-body .md-code-block {
+  margin: 10px 0;
+  padding: 12px;
+  background: #0b1020;
+  color: #e5e7eb;
+  border-radius: 10px;
+  overflow: auto;
+  font-size: 0.9em;
+}
+
+/* Tables */
+.markdown-body .md-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+}
+.markdown-body .md-th,
+.markdown-body .md-td {
+  border: 1px solid #e5e7eb;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+/* Highlight (<mark>) */
+.markdown-body mark {
+  background: #fff3b0;
+  color: inherit;
+  padding: 0 .2em;
+  border-radius: 4px;
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.06);
+}
+
+/* Error bubble (if used) */
+.message.is-error .message-content {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #7f1d1d;
+}
+
+/* Improve timestamp contrast in assistant bubble */
+.ai-message .message-time { color: #6b7280; }
