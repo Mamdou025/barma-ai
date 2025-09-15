@@ -12,6 +12,7 @@ const ChatBox = ({ selectedDoc }) => {
   const [loading, setLoading] = useState(false);
   const [, setError] = useState(null);
   const messagesEndRef = useRef(null);
+  const sessionIdRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -20,6 +21,15 @@ const ChatBox = ({ selectedDoc }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Generate a new session identifier when the selected document changes
+  useEffect(() => {
+    if (selectedDoc) {
+      sessionIdRef.current = `${selectedDoc.id}-${Date.now()}`;
+    } else {
+      sessionIdRef.current = null;
+    }
+  }, [selectedDoc]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -41,7 +51,8 @@ const ChatBox = ({ selectedDoc }) => {
   console.log('4. Document IDs array:', [selectedDoc.id]);
   console.log('5. About to call api.sendMessage with:', {
     message: userMessage,
-    documentIds: [selectedDoc.id]
+    documentIds: [selectedDoc.id],
+    sessionId: sessionIdRef.current
   });
   console.log('==============================');
 
@@ -50,7 +61,7 @@ const ChatBox = ({ selectedDoc }) => {
 
     try {
       // Call your real API
-      const response = await api.sendMessage(userMessage, [selectedDoc.id]);
+      const response = await api.sendMessage(userMessage, [selectedDoc.id], sessionIdRef.current);
       
       // Add AI response to chat
       setMessages(prev => [...prev, { 
