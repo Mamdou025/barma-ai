@@ -46,17 +46,19 @@ const ChatMessage = ({ message, isUser, timestamp, isHistory = false, isError = 
               'h1','h2','h3','table','thead','tbody','tr','th','td','mark','br'
             ]}
             components={{
-              a: ({node, ...props}) => (
+              a: ({node, children, ...props}) => (
                 <a
                   {...props}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="md-a"
-                />
+                >
+                  {children}
+                </a>
               ),
-              h1: ({node, ...props}) => <h1 className="md-h1" {...props} />,
-              h2: ({node, ...props}) => <h2 className="md-h2" {...props} />,
-              h3: ({node, ...props}) => <h3 className="md-h3" {...props} />,
+              h1: ({node, children, ...props}) => <h1 className="md-h1" {...props}>{children}</h1>,
+              h2: ({node, children, ...props}) => <h2 className="md-h2" {...props}>{children}</h2>,
+              h3: ({node, children, ...props}) => <h3 className="md-h3" {...props}>{children}</h3>,
               p:  ({node, ...props}) => <p className="md-p" {...props} />,
               ul: ({node, ...props}) => <ul className="md-ul" {...props} />,
               ol: ({node, ...props}) => <ol className="md-ol" {...props} />,
