@@ -63,7 +63,6 @@ const DocumentList = ({ documents, selectedDoc, onSelectDoc }) => {
     if (toFetch.length === 0) return;
 
     let isCancelled = false;
-    let running = 0;
     let index = 0;
     const controllers = [];
 
@@ -72,7 +71,6 @@ const DocumentList = ({ documents, selectedDoc, onSelectDoc }) => {
       const doc = toFetch[index++];
       const controller = new AbortController();
       controllers.push(controller);
-      running++;
       fetchDocumentTypePreview(doc.id, { signal: controller.signal })
         .then(res => {
           if (isCancelled) return;
@@ -98,7 +96,6 @@ const DocumentList = ({ documents, selectedDoc, onSelectDoc }) => {
           }
         })
         .finally(() => {
-          running--;
           if (!isCancelled) runNext();
         });
     };
