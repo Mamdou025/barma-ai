@@ -82,7 +82,7 @@ async function retrieveGraph({ message, document_ids, maxSegments = 8, expandHop
   // 1) Load docs
   const { data: docs, error } = await supabase
     .from('documents')
-    .select('id, title, text_content')
+    .select('id, name, full_text')
     .in('id', document_ids);
 
   if (error) {
@@ -97,8 +97,8 @@ async function retrieveGraph({ message, document_ids, maxSegments = 8, expandHop
   for (const d of docs) {
     const payload = segmentWholeDocument({
       documentId: d.id,
-      title: d.title,
-      text: d.text_content || '',
+      title: d.name,
+      text: d.full_text || '',
       maxPreviewChars: 200000
     });
 
@@ -115,7 +115,7 @@ async function retrieveGraph({ message, document_ids, maxSegments = 8, expandHop
         seg: s,
         num,
         docId: d.id,
-        docTitle: d.title || ''
+        docTitle: d.name || ''
       });
     }
     segmentsByNumByDoc[d.id] = byNum;

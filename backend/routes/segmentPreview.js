@@ -36,7 +36,7 @@ router.get('/segment-preview', async (req, res) => {
 
     const { data, error } = await supabase
       .from('documents')
-      .select('id, title, text_content')
+      .select('id, title:name, text_content:full_text')
       .eq('id', documentId)
       .single();
 
