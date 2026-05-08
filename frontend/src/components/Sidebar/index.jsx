@@ -64,40 +64,44 @@ const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
   if (loading && documents.length === 0) {
     return (
       <div className="sidebar">
-        <div className="sidebar-header">
-          <h2>📚 Sources</h2>
+        <div className="sidebar-brand">
+          <div className="brand-icon">⚖️</div>
+          <div className="brand-text">
+            <span className="brand-name">Barma AI</span>
+            <span className="brand-tagline">Assistant Juridique</span>
+          </div>
         </div>
-        <div className="loading">Chargement des documents...</div>
+        <div className="sidebar-loading">Chargement des documents...</div>
       </div>
     );
   }
 
   return (
     <div className="sidebar">
+      {/* Brand */}
+      <div className="sidebar-brand">
+        <div className="brand-icon">⚖️</div>
+        <div className="brand-text">
+          <span className="brand-name">Barma AI</span>
+          <span className="brand-tagline">Assistant Juridique</span>
+        </div>
+      </div>
+
+      {/* Actions */}
       <div className="sidebar-header">
-        <h2>📚 Sources</h2>
         <div className="sidebar-actions">
           <UploadButton onUpload={handleUploadSuccess} />
           {selectedDoc && (
             <button className="delete-btn" onClick={handleDelete}>
-              🗑️ Supprimer
+              Supprimer
             </button>
           )}
         </div>
       </div>
 
-      {error && (
-        <div className="error-message" style={{
-          color: '#d32f2f',
-          padding: '8px',
-          background: '#ffebee',
-          borderRadius: '4px',
-          marginBottom: '16px',
-          fontSize: '14px'
-        }}>
-          {error}
-        </div>
-      )}
+      <div className="sidebar-section-label">Mes Documents</div>
+
+      {error && <div className="sidebar-error">{error}</div>}
 
       <DocumentList
         documents={documents}
@@ -107,14 +111,13 @@ const Sidebar = ({ selectedDoc, onSelectDoc, onUpload, onDelete }) => {
 
       {selectedDoc && (
         <div className="pdf-preview">
-          <h3>📖 aperçu</h3>
+          <div className="pdf-preview-label">Aperçu</div>
           <div className="pdf-viewer">
             <iframe
               src={selectedDoc.storage_url}
               title="PDF Preview"
               width="100%"
               height="100%"
-              style={{ border: '1px solid #e1e5e9', borderRadius: '8px' }}
             />
           </div>
         </div>

@@ -128,10 +128,10 @@ const ChatBox = ({ selectedDoc }) => {
         {messages.length === 0 ? (
           <div className="chat-empty">
             <div className="empty-chat-icon">
-              <img src={com003} alt=" chaticon" />
+              <img src={com003} alt="chaticon" />
             </div>
-            <h3>Commencez une Conversation</h3>
-            <p>Posez des questions sur vos documents téléchargés et obtenez des informations basées sur l'IA</p>
+            <h3>Commencez une conversation</h3>
+            <p>Posez des questions sur vos documents et obtenez des réponses juridiques précises basées sur leur contenu.</p>
           </div>
         ) : (
           messages.map((msg, index) => (
@@ -176,8 +176,19 @@ const ChatBox = ({ selectedDoc }) => {
             onClick={handleSend}
             disabled={!input.trim() || !selectedDoc || loading}
             className="send-button"
+            aria-label="Envoyer"
           >
-            {loading ? '⏳' : '➡️'}
+            {loading ? (
+              <svg className="spin-icon" width="17" height="17" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" strokeOpacity="0.25"/>
+                <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+            ) : (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
           </button>
         </div>
       </div>
