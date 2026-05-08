@@ -1,4 +1,7 @@
+// frontend/src/utils/api.js
 const BASE_URL = 'https://barma-ai-backend.onrender.com/api';
+
+/* ------------------- Documents ------------------- */
 
 // Upload a PDF document
 export async function uploadDocument(file) {
@@ -31,19 +34,59 @@ export async function deleteDocument(id) {
   return response.json();
 }
 
-// Send a message to the AI chat with document context
-export async function chatWithDocument(documentId, message) {
+/* ------------------- Chat ------------------- */
+
+// UPDATED to match backend: expects document_ids (array), optional session_id, vulgarisation
+export async function chatWithDocument(documentId, message, sessionId = null, vulgarisation = true) {
   const response = await fetch(`${BASE_URL}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ document_id: documentId, message }),
+    body: JSON.stringify({
+      message,
+      document_ids: [documentId],
+      session_id: sessionId,
+      vulgarisation
+    }),
   });
 
-  if (!response.ok) throw new Error('Failed to chat with AI');
-  return response.json();
+  if (!response.ok) throw new Error(`Failed to chat with AI (${response.status})`);
+  return response.json(); // { reply, response_time_ms, retrieval_mode, sources_used, source_map }
 }
 
-// Generate a mind map for a document
+/**
+ * Unified API object used by ChatBox:
+ *   api.sendMessage(message, [docId], sessionId)
+ * Returns a normalized object with source_map included.
+ */
+export const api = {
+  async sendMessage(message, documentIds, sessionId, vulgarisation = true) {
+    const res = await fetch(`${BASE_URL}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        document_ids: documentIds,
+        session_id: sessionId,
+        vulgarisation
+      }),
+    });
+
+    if (!res.ok) throw new Error(`chat ${res.status}`);
+
+    const json = await res.json();
+    // Normalize shape for ChatBox
+    return {
+      reply: json.reply,
+      response_time_ms: json.response_time_ms,
+      retrieval_mode: json.retrieval_mode,
+      sources_used: json.sources_used || [],
+      source_map: json.source_map || {}
+    };
+  }
+};
+
+/* ------------------- Mindmap ------------------- */
+
 export async function generateMindMap(documentId) {
   const response = await fetch(`${BASE_URL}/mindmap`, {
     method: 'POST',

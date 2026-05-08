@@ -1,5 +1,5 @@
-
 const express = require('express');
+const { supabase } = require('../utils/supabaseClient');
 
 const router = express.Router();
 
@@ -22,9 +22,6 @@ router.post('/chat-logs', async (req, res) => {
   }
 });
 
-const { supabase } = require('../utils/supabaseClient');
-
-
 // Get chat logs for a specific document
 router.get('/chatlogs/:documentId', async (req, res) => {
   const { documentId } = req.params;
@@ -40,7 +37,7 @@ router.get('/chatlogs/:documentId', async (req, res) => {
         ai_response,
         created_at,
         response_time_ms,
-        documents (title)
+        documents (title:name)
       `)
       .eq('document_id', documentId)
       .order('created_at', { ascending: false })
@@ -73,7 +70,7 @@ router.get('/chatlogs', async (req, res) => {
         ai_response,
         created_at,
         response_time_ms,
-        documents (title)
+        documents (title:name)
       `)
       .order('created_at', { ascending: false });
 

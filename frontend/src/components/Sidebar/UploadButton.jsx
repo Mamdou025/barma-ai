@@ -15,28 +15,27 @@ const UploadButton = ({ onUpload }) => {
       
       setUploading(true);
       
-      // Use real API call
+      console.log(`🚀 Upload started: ${file.name} (${file.size} bytes, ${file.type})`);
       const result = await api.uploadDocument(file);
-      
+      console.log('✅ Upload response:', result);
+
       // Transform response to match your component's expected format
       const newDoc = {
-        id: result.document?.id || Date.now(), // Use actual ID from backend
+        id: result.id || result.document?.id, // Use actual ID from backend
         title: file.name,
         storage_url: result.public_url,
         uploaded_at: new Date().toISOString(),
         text_content: result.text_content || ''
       };
-      
+
       onUpload(newDoc);
-      
-      // Reset file input
-      e.target.value = '';
-      
+
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error:', error.message);
       alert(`Upload failed: ${error.message}`);
     } finally {
       setUploading(false);
+      e.target.value = ''; // Always reset so the same file can be retried after failure
     }
   };
 

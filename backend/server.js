@@ -17,6 +17,8 @@ const documentsRoute = require('./routes/documents');
 const deletedocument = require('./routes/deleteDocument')
 const chatLogsRoute = require('./routes/chatlogs'); // 🆕 ADD THIS
 const notesRoute = require('./routes/notes'); // 🆕 NEW
+const segmentPreviewRoute = require('./routes/segmentPreview');
+
 
 
 
@@ -24,7 +26,7 @@ const notesRoute = require('./routes/notes'); // 🆕 NEW
 
 
 app.use(cors());
-
+app.use('/api', segmentPreviewRoute);
 app.use('/api', uploadRoute);
 app.use('/api', chatRoute);
 app.use('/api', previewRoute);

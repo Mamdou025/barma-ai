@@ -28,7 +28,7 @@ router.delete('/documents/:id', async (req, res) => {
   }
 
   // 3. Delete chunks
-  await supabase.from('chunks').delete().eq('document_id', documentId);
+  await supabase.from('document_chunks').delete().eq('document_id', documentId);
 
   // 4. Delete document record
   await supabase.from('documents').delete().eq('id', documentId);

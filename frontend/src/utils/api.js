@@ -1,4 +1,26 @@
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+
+// UUID regex (same as backend)
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export const fetchDocumentTypePreview = async (documentId, { signal } = {}) => {
+  const params = new URLSearchParams({ document_id: documentId });
+  const response = await fetch(`${API_BASE_URL}/api/segment-preview?${params.toString()}`, {
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to fetch document type preview');
+  }
+
+  const json = await response.json();
+
+  return {
+    type: json.detected_type || 'unknown',
+    human: json.detected_type_human || 'Inconnu',
+  };
+};
 
 export const api = {
   // Upload PDF - matches your /api/upload endpoint
@@ -46,17 +68,22 @@ export const api = {
   },
 
   // Chat with AI - matches your /api/chat endpoint
-  sendMessage: async (message, documentIds) => {
+  // sessionId parameter is optional. If provided, it's sent in the payload
+  sendMessage: async (message, documentIds, sessionId) => {
+    const payload = {
+      message: message,
+      document_ids: documentIds, // Your backend expects this format
+    };
+    if (sessionId) {
+      payload.sessionid = sessionId;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        message: message  ,
-        document_ids: documentIds, // Your backend expects this format
-        sessionid : "12122212"
-      }),
+      body: JSON.stringify(payload),
     });
     
     if (!response.ok) {
@@ -130,6 +157,9 @@ export const api = {
     console.log('✅ Notes loaded:', result);
     return result;
   },
+
+  // Fetch document type preview
+  fetchDocumentTypePreview,
 };
 
 // Helper function to format file size
