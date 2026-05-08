@@ -8,8 +8,8 @@ router.get('/documents', async (req, res) => {
 
   const { data, error } = await supabase
     .from('documents')
-    .select('id, title, uploaded_at, storage_url, text_content')
-    .order('uploaded_at', { ascending: false });
+    .select('id, title:name, uploaded_at:created_at, storage_url, text_content:full_text')
+    .order('created_at', { ascending: false });
 
     
 
@@ -28,7 +28,7 @@ router.get('/documents/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabase
       .from('documents')
-      .select('id, title, uploaded_at, storage_url, text_content')
+      .select('id, title:name, uploaded_at:created_at, storage_url, text_content:full_text')
       .eq('id', id)
       .single();
 

@@ -9,6 +9,8 @@ const pdfParse = require('pdf-parse');
 const openai = require('../utils/openaiClient');
 const { supabase } = require('../utils/supabaseClient');
 
+const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'documents';
+
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
@@ -53,7 +55,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     // 🔼 Upload file to Supabase Storage
     const { error: uploadErr } = await supabase.storage
-      .from('pdfs') // <-- your bucket name
+      .from(SUPABASE_BUCKET)
       .upload(uniqueFilename, dataBuffer, {
         contentType: file.mimetype,
       });
@@ -66,20 +68,20 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     // 🌐 Get the public URL
     const { data: publicURLData } = supabase
       .storage
-      .from('pdfs')
+      .from(SUPABASE_BUCKET)
       .getPublicUrl(uniqueFilename);
 
     const publicURL = publicURLData.publicUrl;
 
     // 📝 Insert document metadata into the database
     const { data: docInsert, error: insertErr } = await supabase
-      .from('documents') // ✅ this is your DB table
+      .from('documents')
       .insert([
         {
-          title: file.originalname,
-          filename: uniqueFilename,
+          name: file.originalname,
+          storage_path: uniqueFilename,
           storage_url: publicURL,
-          text_content: parsedData.text
+          full_text: parsedData.text
         }
       ])
       .select()
@@ -103,11 +105,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       const embedding = embeddingResponse.data[0].embedding;
 
       const { error: chunkErr } = await supabase
-        .from('chunks')
+        .from('document_chunks')
         .insert([
           {
             document_id: docInsert.id,
-            chunk_index: i,
             content: chunk,
             embedding: embedding
           }

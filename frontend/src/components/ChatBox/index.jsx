@@ -1,10 +1,11 @@
+// frontend/src/components/ChatBox/index.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
 import { api } from '../../utils/api';
 import ChatHistory from './ChatHistory';
 
-// Icones 
-import com003 from '../../icons/com/com003.svg' ;
+// Icones
+import com003 from '../../icons/com/com003.svg';
 
 const ChatBox = ({ selectedDoc }) => {
   const [messages, setMessages] = useState([]);
@@ -42,43 +43,61 @@ const ChatBox = ({ selectedDoc }) => {
     const userMessage = input;
     setInput('');
     setError(null);
-    
-    // Add user message to chat
-  console.log('=== SEND BUTTON CLICKED ===');
-  console.log('1. User message:', userMessage);
-  console.log('2. Selected document:', selectedDoc);
-  console.log('3. Selected document ID:', selectedDoc?.id);
-  console.log('4. Document IDs array:', [selectedDoc.id]);
-  console.log('5. About to call api.sendMessage with:', {
-    message: userMessage,
-    documentIds: [selectedDoc.id],
-    sessionId: sessionIdRef.current
-  });
-  console.log('==============================');
 
-    setMessages(prev => [...prev, { message: userMessage, isUser: true }]);
+    // Add user message to chat
+    console.log('=== SEND BUTTON CLICKED ===');
+    console.log('1. User message:', userMessage);
+    console.log('2. Selected document:', selectedDoc);
+    console.log('3. Selected document ID:', selectedDoc?.id);
+    console.log('4. Document IDs array:', [selectedDoc.id]);
+    console.log('5. About to call api.sendMessage with:', {
+      message: userMessage,
+      documentIds: [selectedDoc.id],
+      sessionId: sessionIdRef.current
+    });
+    console.log('==============================');
+
+    setMessages(prev => [
+      ...prev,
+      {
+        message: userMessage,
+        isUser: true,
+        sourceMap: null,
+        timestamp: Date.now()
+      }
+    ]);
     setLoading(true);
 
     try {
       // Call your real API
       const response = await api.sendMessage(userMessage, [selectedDoc.id], sessionIdRef.current);
-      
-      // Add AI response to chat
-      setMessages(prev => [...prev, { 
-        message: response.reply, 
-        isUser: false 
-      }]);
-      
+
+      // Add AI response to chat (include source_map from backend)
+      setMessages(prev => [
+        ...prev,
+        {
+          message: response.reply,
+          isUser: false,
+          sourceMap: response.source_map || {},
+          timestamp: Date.now()
+        }
+      ]);
+
     } catch (err) {
       console.error('Chat error:', err);
       setError(err.message);
-      
+
       // Add error message to chat
-      setMessages(prev => [...prev, {
-        message: `Sorry, I encountered an error: ${err.message}`,
-        isUser: false,
-        isError: true
-      }]);
+      setMessages(prev => [
+        ...prev,
+        {
+          message: `Sorry, I encountered an error: ${err.message}`,
+          isUser: false,
+          isError: true,
+          sourceMap: null,
+          timestamp: Date.now()
+        }
+      ]);
     } finally {
       setLoading(false);
     }
@@ -95,7 +114,9 @@ const ChatBox = ({ selectedDoc }) => {
     <div className="chat-container">
       <div className="chat-header">
         <ChatHistory documentId={selectedDoc?.id} />
-        <h2> <img src={com003} alt="chaticon" /> Discutez avec l'IA</h2>
+        <h2>
+          <img src={com003} alt="chaticon" /> Discutez avec l'IA
+        </h2>
         {selectedDoc && (
           <div className="chat-context">
             En analyse: <strong>{selectedDoc.title}</strong>
@@ -106,21 +127,25 @@ const ChatBox = ({ selectedDoc }) => {
       <div className="chat-messages">
         {messages.length === 0 ? (
           <div className="chat-empty">
-            <div className="empty-chat-icon"><img src={com003} alt=" chaticon"  /></div>
-            <h3>Commencez une Conversation </h3>
+            <div className="empty-chat-icon">
+              <img src={com003} alt=" chaticon" />
+            </div>
+            <h3>Commencez une Conversation</h3>
             <p>Posez des questions sur vos documents téléchargés et obtenez des informations basées sur l'IA</p>
           </div>
         ) : (
           messages.map((msg, index) => (
-            <ChatMessage 
-              key={index} 
-              message={msg.message} 
-              isUser={msg.isUser} 
+            <ChatMessage
+              key={index}
+              message={msg.message}
+              isUser={msg.isUser}
               isError={msg.isError}
+              sourceMap={msg.sourceMap}
+              timestamp={msg.timestamp}
             />
           ))
         )}
-        
+
         {loading && (
           <div className="message ai-message">
             <div className="message-avatar">🟢</div>
@@ -147,7 +172,7 @@ const ChatBox = ({ selectedDoc }) => {
             rows={1}
             className="chat-input"
           />
-          <button 
+          <button
             onClick={handleSend}
             disabled={!input.trim() || !selectedDoc || loading}
             className="send-button"

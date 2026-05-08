@@ -12,7 +12,7 @@ router.post('/mindmap', async (req, res) => {
   try {
     const { data: docs, error: fetchErr } = await supabase
       .from('documents')
-      .select('text_content') // change this to match your actual column name
+      .select('full_text')
       .in('id', document_ids);
 
     if (fetchErr || !docs) {
@@ -20,7 +20,7 @@ router.post('/mindmap', async (req, res) => {
       return res.status(500).json({ error: 'Failed to load document text.' });
     }
 
-    const fullText = docs.map(doc => doc.text_content).join('\n\n');
+    const fullText = docs.map(doc => doc.full_text).join('\n\n');
     console.log('🧠 Sending full text to GPT:', fullText.slice(0, 300)); // log only start
 
     const completion = await openai.chat.completions.create({
