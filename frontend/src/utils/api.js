@@ -1,4 +1,6 @@
-export const API_BASE_URL = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+const configuredApiBase = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_BASE;
+
+export const API_BASE_URL = (configuredApiBase || 'http://localhost:5000').replace(/\/$/, '');
 
 // UUID regex (same as backend)
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
