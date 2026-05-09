@@ -22,13 +22,17 @@ const UploadButton = ({ onUpload }) => {
       // Transform response to match your component's expected format
       const newDoc = {
         id: result.id || result.document?.id, // Use actual ID from backend
-        title: file.name,
-        storage_url: result.public_url,
-        uploaded_at: new Date().toISOString(),
-        text_content: result.text_content || ''
+        title: result.document?.title || file.name,
+        storage_url: result.document?.storage_url || result.public_url,
+        uploaded_at: result.document?.uploaded_at || new Date().toISOString(),
+        text_content: result.document?.text_content || result.text_content || ''
       };
 
       onUpload(newDoc);
+
+      if (result.warnings?.length) {
+        alert(result.warnings.join('\n\n'));
+      }
 
     } catch (error) {
       console.error('❌ Upload error:', error.message);
