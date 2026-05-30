@@ -115,23 +115,25 @@ function cosineSimilarity(a, b) {
   return dot / (normA * normB || 1e-8);
 }
 
-/* ----------------------------------------- Route ----------------------------------------- */
+/* ------------------------------------- Shared pipeline ------------------------------------- */
 
-router.post('/chat', async (req, res) => {
-  const { message, document_ids, session_id, vulgarisation = false } = req.body;
-  const startTime = Date.now();
+/**
+ * Runs retrieval for the selected documents and builds the numbered context
+ * plus the source_map used by the UI. Shared by both the buffered (/chat) and
+ * streaming (/chat/stream) endpoints.
+ *
+ * Returns one of:
+ *   { kind: 'context', contextText, retrieval_mode, sourcesUsed, source_map }
+ *   { kind: 'empty', reply, retrieval_mode }            // nothing to answer from
+ *   { kind: 'error', status, body }                     // upstream failure
+ */
+async function buildChatContext({ message, document_ids }) {
+  let contextText = '';
+  let retrieval_mode = USE_GRAPH ? 'graph' : 'chunks';
+  let sourcesUsed = [];
+  let source_map = {};
 
-  if (!Array.isArray(document_ids) || document_ids.length === 0) {
-    return res.status(400).json({ error: 'No document_ids provided' });
-  }
-
-  try {
-    let contextText = '';
-    let retrieval_mode = USE_GRAPH ? 'graph' : 'chunks';
-    let sourcesUsed = [];
-    let source_map = {};
-
-    if (USE_GRAPH) {
+  if (USE_GRAPH) {
       // GRAPH MODE
       const {
         contextText: ctx,
@@ -170,7 +172,7 @@ router.post('/chat', async (req, res) => {
           .in('id', ids);
         if (docsErr) {
           console.error('❌ Error fetching document titles:', docsErr.message);
-          return res.status(500).json({ error: 'Error fetching document titles' });
+          return { kind: 'error', status: 500, body: { error: 'Error fetching document titles' } };
         }
         (docs || []).forEach(d => { docsById[d.id] = d; });
       } else if (fallbackDocId) {
@@ -185,7 +187,7 @@ router.post('/chat', async (req, res) => {
 
       source_map = buildSourceMap({ sourcesUsed, docsById });
 
-    } else {
+  } else {
       // ------------------------- LEGACY CHUNK MODE -------------------------
       // 1) Embed question
       const embedQ = await openai.embeddings.create({
@@ -203,18 +205,16 @@ router.post('/chat', async (req, res) => {
 
       if (fetchErr) {
         console.error('❌ Error fetching chunks:', fetchErr.message);
-        return res.status(500).json({ error: 'Error fetching chunks' });
+        return { kind: 'error', status: 500, body: { error: 'Error fetching chunks' } };
       }
 
       const chunksArr = Array.isArray(allChunks) ? allChunks : [];
       if (!chunksArr.length) {
-        return res.status(200).json({
-          reply: "Aucun ‘chunk’ n’a été trouvé pour ces documents. Veuillez (ré)indexer le document.",
-          response_time_ms: Date.now() - startTime,
+        return {
+          kind: 'empty',
           retrieval_mode,
-          sources_used: [],
-          source_map: {}
-        });
+          reply: "Aucun ‘chunk’ n’a été trouvé pour ces documents. Veuillez (ré)indexer le document."
+        };
       }
 
       // 3) Similarity
@@ -240,7 +240,7 @@ router.post('/chat', async (req, res) => {
 
       if (docsErr) {
         console.error('❌ Error fetching document titles:', docsErr.message);
-        return res.status(500).json({ error: 'Error fetching document titles' });
+        return { kind: 'error', status: 500, body: { error: 'Error fetching document titles' } };
       }
       const docsById = {};
       (docs || []).forEach(d => { docsById[d.id] = d; });
@@ -253,9 +253,17 @@ router.post('/chat', async (req, res) => {
 
       // 7) Build source_map for UI chips
       source_map = buildSourceMap({ sourcesUsed, docsById });
-    }
+  }
 
-    // 8) Rules
+  return { kind: 'context', contextText, retrieval_mode, sourcesUsed, source_map };
+}
+
+/**
+ * Builds the OpenAI chat-completion parameters (system + user prompt) shared
+ * by the buffered and streaming endpoints. `stream` toggles token streaming.
+ */
+function buildCompletionParams({ contextText, message, vulgarisation, stream = false }) {
+    // Rules
     const rulesText = rules?.PAN_rules?.instruction_summary || '';
     const systemPrompt = `
 ${rulesText}
@@ -273,15 +281,15 @@ RÈGLES OBLIGATOIRES
       ? "Mode vulgarisation activé. Réponds de manière simple.\n\n" + message
       : message;
 
-    // 9) Completion
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      temperature: 0.2,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content:
+  return {
+    model: 'gpt-3.5-turbo',
+    temperature: 0.2,
+    stream,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content:
 `CONTEXTE (numéroté) :
 ${contextText}
 
@@ -299,36 +307,70 @@ RÈGLES :
 - Entourez les points clés (termes, chiffres, articles) avec la balise <mark>…</mark> (max 6).
 - Chaque ligne DOIT contenir au moins un marqueur de source 【n】 correspondant au CONTEXTE.
 - Si le point n'est pas couvert par le contexte, écrivez : "Les documents fournis ne traitent pas de ce point."`
-        }
-      ]
-    });
+      }
+    ]
+  };
+}
+
+// Persist a finished exchange to chat_logs (best-effort, never throws).
+async function logChat({ req, session_id, document_ids, message, finalReply, responseTime }) {
+  try {
+    const { error: logError } = await supabase
+      .from('chat_logs')
+      .insert([{
+        session_id: session_id || null,
+        document_id: document_ids[0],
+        user_message: message,
+        ai_response: finalReply,
+        response_time_ms: responseTime,
+        user_ip: req.ip || req.connection?.remoteAddress,
+        user_agent: req.get('User-Agent')
+      }]);
+    if (logError) console.error('⚠️ Failed to save chat log:', logError.message);
+    else console.log('✅ Chat log saved');
+  } catch (logErr) {
+    console.error('⚠️ Chat logging error:', logErr);
+  }
+}
+
+/* ----------------------------------------- Routes ----------------------------------------- */
+
+// Buffered endpoint — returns the full answer in one JSON payload (unchanged behavior).
+router.post('/chat', async (req, res) => {
+  const { message, document_ids, session_id, vulgarisation = false } = req.body;
+  const startTime = Date.now();
+
+  if (!Array.isArray(document_ids) || document_ids.length === 0) {
+    return res.status(400).json({ error: 'No document_ids provided' });
+  }
+
+  try {
+    const ctx = await buildChatContext({ message, document_ids });
+
+    if (ctx.kind === 'error') return res.status(ctx.status).json(ctx.body);
+    if (ctx.kind === 'empty') {
+      return res.status(200).json({
+        reply: ctx.reply,
+        response_time_ms: Date.now() - startTime,
+        retrieval_mode: ctx.retrieval_mode,
+        sources_used: [],
+        source_map: {}
+      });
+    }
+
+    const { contextText, retrieval_mode, sourcesUsed, source_map } = ctx;
+
+    const completion = await openai.chat.completions.create(
+      buildCompletionParams({ contextText, message, vulgarisation, stream: false })
+    );
 
     const aiResponse = completion.choices[0].message.content;
     let finalReply = appendSourcesIfMissing(aiResponse, contextText);
     finalReply = ensureHighlights(finalReply);
 
     const responseTime = Date.now() - startTime;
+    await logChat({ req, session_id, document_ids, message, finalReply, responseTime });
 
-    // 10) Save log (best-effort)
-    try {
-      const { error: logError } = await supabase
-        .from('chat_logs')
-        .insert([{
-          session_id: session_id || null,
-          document_id: document_ids[0],
-          user_message: message,
-          ai_response: finalReply,
-          response_time_ms: responseTime,
-          user_ip: req.ip || req.connection?.remoteAddress,
-          user_agent: req.get('User-Agent')
-        }]);
-      if (logError) console.error('⚠️ Failed to save chat log:', logError.message);
-      else console.log('✅ Chat log saved');
-    } catch (logErr) {
-      console.error('⚠️ Chat logging error:', logErr);
-    }
-
-    // 11) API response (includes source_map for clickable chips)
     res.json({
       reply: finalReply,
       response_time_ms: responseTime,
@@ -340,6 +382,87 @@ RÈGLES :
   } catch (err) {
     console.error('❌ /api/chat error:', err);
     res.status(500).json({ error: 'Failed to generate chat response' });
+  }
+});
+
+/* ----------------------------------- Streaming endpoint ----------------------------------- */
+
+// Server-Sent Events stream. Emits, in order:
+//   event: meta   { retrieval_mode, source_map }   — sent before any token
+//   event: delta  { text }                          — one per token chunk
+//   event: done   { reply, response_time_ms, sources_used }  — post-processed answer
+//   event: error  { error }                         — on failure
+router.post('/chat/stream', async (req, res) => {
+  const { message, document_ids, session_id, sessionid, vulgarisation = false } = req.body;
+  const sid = session_id || sessionid || null;
+  const startTime = Date.now();
+
+  if (!Array.isArray(document_ids) || document_ids.length === 0) {
+    return res.status(400).json({ error: 'No document_ids provided' });
+  }
+
+  // Open the SSE channel.
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering (nginx)
+  if (typeof res.flushHeaders === 'function') res.flushHeaders();
+
+  const send = (event, data) => {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
+  try {
+    const ctx = await buildChatContext({ message, document_ids });
+
+    if (ctx.kind === 'error') {
+      send('error', ctx.body);
+      return res.end();
+    }
+    if (ctx.kind === 'empty') {
+      send('meta', { retrieval_mode: ctx.retrieval_mode, source_map: {} });
+      send('delta', { text: ctx.reply });
+      send('done', {
+        reply: ctx.reply,
+        response_time_ms: Date.now() - startTime,
+        sources_used: []
+      });
+      return res.end();
+    }
+
+    const { contextText, retrieval_mode, sourcesUsed, source_map } = ctx;
+
+    // Send retrieval metadata up front so the UI can render source chips immediately.
+    send('meta', { retrieval_mode, source_map });
+
+    const stream = await openai.chat.completions.create(
+      buildCompletionParams({ contextText, message, vulgarisation, stream: true })
+    );
+
+    let aiResponse = '';
+    for await (const part of stream) {
+      const delta = part?.choices?.[0]?.delta?.content || '';
+      if (delta) {
+        aiResponse += delta;
+        send('delta', { text: delta });
+      }
+    }
+
+    // Post-process the complete answer the same way the buffered route does.
+    let finalReply = appendSourcesIfMissing(aiResponse, contextText);
+    finalReply = ensureHighlights(finalReply);
+
+    const responseTime = Date.now() - startTime;
+    await logChat({ req, session_id: sid, document_ids, message, finalReply, responseTime });
+
+    send('done', { reply: finalReply, response_time_ms: responseTime, sources_used: sourcesUsed });
+    res.end();
+
+  } catch (err) {
+    console.error('❌ /api/chat/stream error:', err);
+    // Headers are already sent, so surface the failure over the open SSE channel.
+    send('error', { error: 'Failed to generate chat response' });
+    res.end();
   }
 });
 

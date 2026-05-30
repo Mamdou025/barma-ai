@@ -92,8 +92,83 @@ export const api = {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || 'Failed to send message');
     }
-    
+
     return response.json();
+  },
+
+  // Streamed chat - matches your /api/chat/stream (SSE) endpoint.
+  // Reads tokens as they are generated and reports them via callbacks:
+  //   onMeta({ retrieval_mode, source_map })  — once, before any token
+  //   onDelta(text)                            — per token chunk
+  //   onDone({ reply, response_time_ms, sources_used }) — final processed answer
+  // Resolves once the stream ends; rejects on transport/HTTP errors.
+  sendMessageStream: async (
+    message,
+    documentIds,
+    sessionId,
+    { onMeta, onDelta, onDone, signal } = {}
+  ) => {
+    const payload = {
+      message,
+      document_ids: documentIds,
+    };
+    if (sessionId) {
+      payload.session_id = sessionId;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/chat/stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal,
+    });
+
+    if (!response.ok || !response.body) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to send message');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let streamError = null;
+
+    const dispatch = (event, data) => {
+      if (event === 'meta') onMeta?.(data);
+      else if (event === 'delta') onDelta?.(data?.text ?? '');
+      else if (event === 'done') onDone?.(data);
+      else if (event === 'error') streamError = new Error(data?.error || 'Stream error');
+    };
+
+    // SSE frames are separated by a blank line; each frame has `event:`/`data:` lines.
+    const flushFrame = (frame) => {
+      let event = 'message';
+      let dataStr = '';
+      for (const line of frame.split('\n')) {
+        if (line.startsWith('event:')) event = line.slice(6).trim();
+        else if (line.startsWith('data:')) dataStr += line.slice(5).trim();
+      }
+      if (!dataStr) return;
+      let data;
+      try { data = JSON.parse(dataStr); } catch { data = dataStr; }
+      dispatch(event, data);
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      let sep;
+      while ((sep = buffer.indexOf('\n\n')) !== -1) {
+        const frame = buffer.slice(0, sep);
+        buffer = buffer.slice(sep + 2);
+        if (frame.trim()) flushFrame(frame);
+      }
+    }
+    if (buffer.trim()) flushFrame(buffer);
+
+    if (streamError) throw streamError;
   },
 
   // Generate mind map - matches your /api/mindmap endpoint

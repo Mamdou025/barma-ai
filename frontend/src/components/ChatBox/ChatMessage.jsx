@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 
-const ChatMessage = ({ message, isUser, timestamp, isHistory = false, isError = false, sourceMap = {} }) => {
+const ChatMessage = ({ message, isUser, timestamp, isHistory = false, isError = false, streaming = false, sourceMap = {} }) => {
   const [copiedKey, setCopiedKey] = useState(null);
 
   const formatTime = (ts) => {
@@ -29,7 +29,7 @@ const ChatMessage = ({ message, isUser, timestamp, isHistory = false, isError = 
   const entries = Object.entries(sourceMap || {}); // [["1",{doc_id,...}], ...]
 
   return (
-    <div className={`message ${isUser ? 'user-message' : 'ai-message'} ${isHistory ? 'history-message' : ''} ${isError ? 'is-error' : ''}`}>
+    <div className={`message ${isUser ? 'user-message' : 'ai-message'} ${isHistory ? 'history-message' : ''} ${isError ? 'is-error' : ''} ${streaming ? 'is-streaming' : ''}`}>
       <div className="message-avatar">
         {isUser ? '👤' : '🟢'}
       </div>
@@ -79,8 +79,11 @@ const ChatMessage = ({ message, isUser, timestamp, isHistory = false, isError = 
             {message || ''}
           </ReactMarkdown>
 
-          {/* Source chips (if backend sent `source_map`) */}
-          {!isUser && entries.length > 0 && (
+          {/* Blinking caret while the answer is still streaming in */}
+          {streaming && <span className="stream-caret" aria-hidden="true" />}
+
+          {/* Source chips (if backend sent `source_map`) — only once streaming is done */}
+          {!isUser && !streaming && entries.length > 0 && (
             <div className="source-chips">
               {entries.map(([key, meta]) => {
                 const label = `【${key}】 ${meta?.doc_title || 'Source'}`;
