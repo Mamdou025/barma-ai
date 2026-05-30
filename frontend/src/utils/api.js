@@ -45,13 +45,21 @@ export const api = {
 
   // Get all documents - matches your /api/documents endpoint
   getDocuments: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/documents`);
-    
+    let response;
+    try {
+      response = await fetch(`${API_BASE_URL}/api/documents`);
+    } catch (networkErr) {
+      // fetch() throws only on transport failures (server down, CORS, bad URL).
+      throw new Error(`Cannot reach the API at ${API_BASE_URL} (${networkErr.message})`);
+    }
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to fetch documents');
+      // Prefer the backend's real cause when present, so the actual reason is visible.
+      const detail = errorData.detail ? ` — ${errorData.detail}` : '';
+      throw new Error(`${errorData.error || 'Failed to fetch documents'}${detail}`);
     }
-    
+
     return response.json();
   },
 
