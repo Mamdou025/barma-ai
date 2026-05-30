@@ -68,36 +68,73 @@ const ChatBox = ({ selectedDoc }) => {
     ]);
     setLoading(true);
 
-    try {
-      // Call your real API
-      const response = await api.sendMessage(userMessage, [selectedDoc.id], sessionIdRef.current);
-
-      // Add AI response to chat (include source_map from backend)
+    // The AI bubble we progressively fill as tokens stream in, addressed by a
+    // stable id. `created` is a synchronous guard so rapid deltas can't append
+    // duplicate bubbles before the first append has flushed to state.
+    const aiId = `ai-${Date.now()}`;
+    let created = false;
+    const ensureAiMessage = () => {
+      if (created) return;
+      created = true;
       setMessages(prev => [
         ...prev,
         {
-          message: response.reply,
+          id: aiId,
+          message: '',
           isUser: false,
-          sourceMap: response.source_map || {},
+          sourceMap: {},
+          streaming: true,
           timestamp: Date.now()
         }
       ]);
+      setLoading(false); // first event arrived: swap the typing dots for live text
+    };
+    const updateAi = (patch) => {
+      setMessages(prev => prev.map(m =>
+        m.id === aiId ? { ...m, ...(typeof patch === 'function' ? patch(m) : patch) } : m
+      ));
+    };
+
+    try {
+      await api.sendMessageStream(userMessage, [selectedDoc.id], sessionIdRef.current, {
+        onMeta: ({ source_map }) => {
+          ensureAiMessage();
+          updateAi({ sourceMap: source_map || {} });
+        },
+        onDelta: (text) => {
+          ensureAiMessage();
+          updateAi(m => ({ message: m.message + text }));
+        },
+        onDone: ({ reply, source_map }) => {
+          ensureAiMessage();
+          updateAi(m => ({
+            // Prefer the post-processed reply (highlights + sources) when present.
+            message: reply ?? m.message,
+            sourceMap: source_map || m.sourceMap || {},
+            streaming: false
+          }));
+        }
+      });
 
     } catch (err) {
       console.error('Chat error:', err);
       setError(err.message);
 
-      // Add error message to chat
-      setMessages(prev => [
-        ...prev,
-        {
-          message: `Sorry, I encountered an error: ${err.message}`,
-          isUser: false,
-          isError: true,
-          sourceMap: null,
-          timestamp: Date.now()
-        }
-      ]);
+      if (created) {
+        // Stream started then failed: turn the in-progress bubble into an error.
+        updateAi({ message: `Sorry, I encountered an error: ${err.message}`, isError: true, streaming: false });
+      } else {
+        setMessages(prev => [
+          ...prev,
+          {
+            message: `Sorry, I encountered an error: ${err.message}`,
+            isUser: false,
+            isError: true,
+            sourceMap: null,
+            timestamp: Date.now()
+          }
+        ]);
+      }
     } finally {
       setLoading(false);
     }
@@ -140,6 +177,7 @@ const ChatBox = ({ selectedDoc }) => {
               message={msg.message}
               isUser={msg.isUser}
               isError={msg.isError}
+              streaming={msg.streaming}
               sourceMap={msg.sourceMap}
               timestamp={msg.timestamp}
             />
