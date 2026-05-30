@@ -1,5 +1,5 @@
 const express = require('express');
-const { supabase } = require('../utils/supabaseClient');
+const { supabase, supabaseConfig } = require('../utils/supabaseClient');
 
 const router = express.Router();
 
@@ -11,11 +11,19 @@ router.get('/documents', async (req, res) => {
     .select('id, title:name, uploaded_at:created_at, storage_url, text_content:full_text')
     .order('created_at', { ascending: false });
 
-    
+
 
   if (error) {
-    console.error('❌ Failed to fetch documents:', error.message);
-    return res.status(500).json({ error: 'Error fetching documents' });
+    console.error('❌ Failed to fetch documents:', error.message, error.code || '', error.hint || '');
+    return res.status(500).json({
+      error: 'Error fetching documents',
+      // Surface the real cause so it is visible in the browser/network tab.
+      // No secrets are included — only presence flags and Supabase's own message.
+      detail: error.message,
+      code: error.code || null,
+      hint: error.hint || null,
+      env: supabaseConfig
+    });
   }
 
   res.json({ documents: data });
