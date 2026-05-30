@@ -10,15 +10,20 @@ const router = express.Router();
 async function probeSupabase() {
   const url = process.env.SUPABASE_URL;
   if (!url) return 'SUPABASE_URL is not set';
+  // The URL (host) is not a secret — only the service key is — so it's safe to
+  // echo back to help spot typos / wrong-project URLs.
+  let host = url;
+  try { host = new URL(url).host; } catch { /* keep raw value if unparseable */ }
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
     const r = await fetch(`${url.replace(/\/$/, '')}/auth/v1/health`, { signal: controller.signal });
     clearTimeout(timer);
-    return `reachable (HTTP ${r.status})`;
+    return `reachable (HTTP ${r.status}) host=${host}`;
   } catch (e) {
     const cause = e?.cause;
-    return cause?.code || cause?.message || e?.message || 'unreachable';
+    const reason = cause?.code || cause?.message || e?.message || 'unreachable';
+    return `${reason} host=${host}`;
   }
 }
 
