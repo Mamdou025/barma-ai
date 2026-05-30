@@ -57,7 +57,8 @@ export const api = {
       const errorData = await response.json().catch(() => ({}));
       // Prefer the backend's real cause when present, so the actual reason is visible.
       const detail = errorData.detail ? ` — ${errorData.detail}` : '';
-      throw new Error(`${errorData.error || 'Failed to fetch documents'}${detail}`);
+      const probe = errorData.connectivity ? ` [Supabase: ${errorData.connectivity}]` : '';
+      throw new Error(`${errorData.error || 'Failed to fetch documents'}${detail}${probe}`);
     }
 
     return response.json();

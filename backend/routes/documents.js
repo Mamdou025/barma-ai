@@ -3,6 +3,25 @@ const { supabase, supabaseConfig } = require('../utils/supabaseClient');
 
 const router = express.Router();
 
+// Directly probe the Supabase host to distinguish *why* a "fetch failed"
+// happens at the backend: DNS/wrong-URL (ENOTFOUND), firewall/paused/no-outbound
+// (ETIMEDOUT), nothing listening (ECONNREFUSED), or reachable (then it's not
+// connectivity). Returns a short human string; never throws.
+async function probeSupabase() {
+  const url = process.env.SUPABASE_URL;
+  if (!url) return 'SUPABASE_URL is not set';
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const r = await fetch(`${url.replace(/\/$/, '')}/auth/v1/health`, { signal: controller.signal });
+    clearTimeout(timer);
+    return `reachable (HTTP ${r.status})`;
+  } catch (e) {
+    const cause = e?.cause;
+    return cause?.code || cause?.message || e?.message || 'unreachable';
+  }
+}
+
 router.get('/documents', async (req, res) => {
   console.log('📡 Received request for /api/documents from frontend');
 
@@ -15,6 +34,13 @@ router.get('/documents', async (req, res) => {
 
   if (error) {
     console.error('❌ Failed to fetch documents:', error.message, error.code || '', error.hint || '');
+
+    // "fetch failed" means the backend couldn't reach Supabase — probe to pinpoint why.
+    const connectivity = /fetch failed/i.test(error.message || '')
+      ? await probeSupabase()
+      : null;
+    if (connectivity) console.error('   ↳ Supabase connectivity probe:', connectivity);
+
     return res.status(500).json({
       error: 'Error fetching documents',
       // Surface the real cause so it is visible in the browser/network tab.
@@ -22,6 +48,7 @@ router.get('/documents', async (req, res) => {
       detail: error.message,
       code: error.code || null,
       hint: error.hint || null,
+      connectivity,
       env: supabaseConfig
     });
   }
