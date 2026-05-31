@@ -37,9 +37,12 @@ export const api = {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Upload failed');
+      // Surface the backend's real cause (e.g. missing bucket/table) when present.
+      const detail = errorData.detail ? ` — ${errorData.detail}` : '';
+      const hint = errorData.hint ? ` (${errorData.hint})` : '';
+      throw new Error(`${errorData.error || 'Upload failed'}${detail}${hint}`);
     }
-    
+
     return response.json();
   },
 

@@ -76,7 +76,12 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     if (uploadErr) {
       console.error('❌ Storage upload error:', uploadErr.message);
-      return res.status(500).json({ error: 'Failed to upload file to storage' });
+      return res.status(500).json({
+        error: 'Failed to upload file to storage',
+        detail: uploadErr.message,
+        bucket: SUPABASE_BUCKET,
+        hint: `Confirm a Storage bucket named "${SUPABASE_BUCKET}" exists in this Supabase project.`
+      });
     }
 
     // Step 2: Public URL
@@ -125,7 +130,12 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     if (insertErr) {
       console.error('❌ Document insert error:', insertErr.message);
-      return res.status(500).json({ error: 'Failed to store document' });
+      return res.status(500).json({
+        error: 'Failed to store document',
+        detail: insertErr.message,
+        code: insertErr.code || null,
+        hint: insertErr.hint || 'Confirm the "documents" table exists in this Supabase project.'
+      });
     }
     docInsert = insertedDoc;
 
@@ -185,7 +195,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
   } catch (err) {
     console.error('❌ Upload handler error:', err.message);
-    return res.status(500).json({ error: 'Failed to upload PDF' });
+    return res.status(500).json({ error: 'Failed to upload PDF', detail: err.message });
   } finally {
     if (file?.path) {
       fs.unlink(file.path, (unlinkErr) => {
