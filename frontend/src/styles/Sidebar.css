@@ -1,4 +1,4 @@
-/* ===== SIDEBAR — Dark theme ===== */
+/* ===== SIDEBAR — Light theme (ChatGPT / Open WebUI) ===== */
 .sidebar {
   height: 100%;
   display: flex;
@@ -12,21 +12,21 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 18px 18px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .brand-icon {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  width: 34px;
+  height: 34px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  box-shadow: 0 4px 14px var(--accent-glow);
+  font-size: 17px;
   flex-shrink: 0;
   user-select: none;
 }
@@ -41,44 +41,43 @@
   display: block;
   font-size: 15px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
   letter-spacing: -0.02em;
 }
 
 .brand-tagline {
   display: block;
   font-size: 10px;
-  color: var(--text-sidebar-muted);
-  font-weight: 400;
+  color: var(--text-tertiary);
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 /* ── Action Area ── */
 .sidebar-header {
-  padding: 14px 14px 0;
+  padding: 14px 12px 0;
   flex-shrink: 0;
 }
 
 .sidebar-actions {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 /* ── Upload Button ── */
 .upload-btn {
   width: 100%;
-  padding: 11px 16px;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
-  color: #ffffff;
+  padding: 10px 16px;
+  background: var(--accent);
+  color: #0d0d0d;
   border: none;
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition);
-  box-shadow: 0 4px 14px var(--accent-glow);
   letter-spacing: 0.01em;
   display: flex;
   align-items: center;
@@ -88,29 +87,26 @@
 }
 
 .upload-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(91,110,244,0.5);
+  background: #ffffff;
 }
 
 .upload-btn:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px var(--accent-glow);
+  background: var(--accent);
 }
 
 .upload-btn:disabled {
-  background: rgba(255,255,255,0.08);
-  color: var(--text-sidebar-muted);
+  background: var(--border);
+  color: var(--text-tertiary);
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 /* ── Delete Button ── */
 .delete-btn {
   width: 100%;
   padding: 9px 16px;
-  background: rgba(239, 68, 68, 0.08);
+  background: transparent;
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.18);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 13px;
@@ -124,16 +120,15 @@
 }
 
 .delete-btn:hover {
-  background: rgba(239, 68, 68, 0.16);
-  border-color: rgba(239, 68, 68, 0.35);
-  transform: translateY(-1px);
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.45);
 }
 
 /* ── Section Label ── */
 .sidebar-section-label {
   font-size: 10px;
   font-weight: 700;
-  color: var(--text-sidebar-muted);
+  color: var(--text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 16px 18px 8px;
@@ -152,7 +147,7 @@
 .empty-state {
   text-align: center;
   padding: 32px 16px;
-  color: var(--text-sidebar-muted);
+  color: var(--text-tertiary);
 }
 
 .empty-state p {
@@ -170,23 +165,22 @@
 .document-item {
   display: flex;
   align-items: flex-start;
-  padding: 9px 10px 9px 14px;
-  border-radius: var(--radius-sm);
+  padding: 9px 10px 9px 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background var(--transition);
-  margin-bottom: 1px;
-  border-left: 2px solid transparent;
+  margin-bottom: 2px;
   box-shadow: none;
   outline: none;
 }
 
 .document-item:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--surface-sidebar-hover);
   box-shadow: none;
 }
 
 .document-item:active {
-  background: rgba(255,255,255,0.04);
+  background: var(--surface-sidebar-hover);
   box-shadow: none;
 }
 
@@ -196,13 +190,12 @@
 }
 
 .document-item.selected {
-  background: rgba(255,255,255,0.04);
-  border-left-color: var(--accent);
+  background: #2a2a2a;
   box-shadow: none;
 }
 
 .document-item.selected:active {
-  background: rgba(255,255,255,0.04);
+  background: #2a2a2a;
   box-shadow: none;
 }
 
@@ -211,7 +204,7 @@
   margin-right: 10px;
   flex-shrink: 0;
   margin-top: 1px;
-  opacity: 0.75;
+  opacity: 0.7;
 }
 
 .doc-info {
@@ -229,7 +222,7 @@
 .document-list__title {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-sidebar);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -239,77 +232,53 @@
 
 .doc-meta {
   font-size: 11px;
-  color: var(--text-sidebar-muted);
+  color: var(--text-tertiary);
   line-height: 1.4;
 }
 
-/* ── Type Badges (dark) ── */
+/* ── Type Badges (neutral, subtle) ── */
 .doc-badge {
   padding: 2px 7px;
   border-radius: var(--radius-full);
   font-size: 10px;
   font-weight: 600;
-  background: rgba(255,255,255,0.07);
-  color: var(--text-sidebar-muted);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: #262626;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
   flex-shrink: 0;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
 .doc-badge--loading {
-  background: rgba(91,110,244,0.15);
-  color: #a5b4fc;
-  border-color: rgba(91,110,244,0.3);
-}
-.doc-badge--error {
-  background: rgba(239,68,68,0.12);
-  color: #fca5a5;
-  border-color: rgba(239,68,68,0.25);
-}
-.doc-badge--lois_reglements {
   background: rgba(99,102,241,0.18);
   color: #a5b4fc;
-  border-color: rgba(99,102,241,0.3);
+  border-color: rgba(99,102,241,0.35);
 }
-.doc-badge--jurisprudence {
-  background: rgba(52,211,153,0.14);
-  color: #6ee7b7;
-  border-color: rgba(52,211,153,0.28);
+.doc-badge--error {
+  background: rgba(239,68,68,0.15);
+  color: #fca5a5;
+  border-color: rgba(239,68,68,0.35);
 }
-.doc-badge--doctrine {
-  background: rgba(192,132,252,0.14);
-  color: #d8b4fe;
-  border-color: rgba(192,132,252,0.28);
-}
-.doc-badge--rapports_publics {
-  background: rgba(251,191,36,0.14);
-  color: #fcd34d;
-  border-color: rgba(251,191,36,0.28);
-}
-.doc-badge--pdf {
-  background: rgba(91,110,244,0.15);
-  color: #a5b4fc;
-  border-color: rgba(91,110,244,0.28);
-}
-.doc-badge--url {
-  background: rgba(52,211,153,0.14);
-  color: #6ee7b7;
-  border-color: rgba(52,211,153,0.28);
-}
+.doc-badge--lois_reglements,
+.doc-badge--jurisprudence,
+.doc-badge--doctrine,
+.doc-badge--rapports_publics,
+.doc-badge--pdf,
+.doc-badge--url,
 .doc-badge--text,
 .doc-badge--unknown {
-  background: rgba(255,255,255,0.06);
-  color: var(--text-sidebar-muted);
-  border-color: rgba(255,255,255,0.08);
+  background: #262626;
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
 }
 
 /* ── Error Banner ── */
 .sidebar-error {
   margin: 8px 14px;
   padding: 10px 14px;
-  background: rgba(239,68,68,0.1);
-  border: 1px solid rgba(239,68,68,0.2);
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.3);
   border-radius: var(--radius-md);
   color: #fca5a5;
   font-size: 13px;
@@ -320,8 +289,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  padding: 12px 12px 12px;
+  border-top: 1px solid var(--border);
+  padding: 12px;
   min-height: 0;
   overflow: hidden;
 }
@@ -329,7 +298,7 @@
 .pdf-preview-label {
   font-size: 10px;
   font-weight: 700;
-  color: var(--text-sidebar-muted);
+  color: var(--text-tertiary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-bottom: 10px;
@@ -346,11 +315,11 @@
 
 .pdf-viewer iframe {
   flex: 1;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   min-height: 200px;
   width: 100%;
-  background: #1a2d42;
+  background: #ffffff;
 }
 
 /* ── Sidebar loading state ── */
@@ -361,6 +330,6 @@
   justify-content: center;
   height: 100%;
   gap: 12px;
-  color: var(--text-sidebar-muted);
+  color: var(--text-tertiary);
   font-size: 13px;
 }

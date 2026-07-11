@@ -50,7 +50,10 @@ const DocumentList = ({ documents, selectedDoc, onSelectDoc }) => {
         alert('Upload failed—please retry');
         continue;
       }
-      if (cache[doc.id]) {
+      if (doc.type) {
+        // Type already known (e.g. built-in sample documents) — no fetch needed.
+        seeded[doc.id] = { type: doc.type, human: doc.human, loading: false, error: null };
+      } else if (cache[doc.id]) {
         const { type, human, ts } = cache[doc.id];
         seeded[doc.id] = { type, human, ts, loading: false, error: null };
       } else {

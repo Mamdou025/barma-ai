@@ -25,7 +25,10 @@ const UploadButton = ({ onUpload }) => {
         title: result.document?.title || file.name,
         storage_url: result.document?.storage_url || result.public_url,
         uploaded_at: result.document?.uploaded_at || new Date().toISOString(),
-        text_content: result.document?.text_content || result.text_content || ''
+        text_content: result.document?.text_content || result.text_content || '',
+        // Present for offline uploads (skips the segment-preview fetch); left
+        // undefined for real backend uploads so their type is detected as before.
+        type: result.document?.type
       };
 
       onUpload(newDoc);

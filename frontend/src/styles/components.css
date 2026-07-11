@@ -18,22 +18,22 @@
 
 .btn:hover {
   background: var(--surface-muted);
-  border-color: var(--accent);
+  border-color: var(--text-tertiary);
   color: var(--text-primary);
 }
 
 .btn-primary {
   background: var(--accent);
-  color: #ffffff;
+  color: #0d0d0d;
   border-color: var(--accent);
-  box-shadow: 0 2px 8px var(--accent-glow);
+  box-shadow: none;
 }
 
 .btn-primary:hover {
-  background: var(--accent-dark);
-  border-color: var(--accent-dark);
-  color: #ffffff;
-  box-shadow: 0 3px 10px rgba(91,110,244,0.4);
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #0d0d0d;
+  box-shadow: none;
 }
 
 .btn:disabled,
@@ -83,10 +83,10 @@
 /* ===== Error States ===== */
 .error-state {
   padding: 14px;
-  background: #fef7f0;
-  border: 1px solid #f9ab00;
+  background: rgba(229,179,74,0.12);
+  border: 1px solid rgba(229,179,74,0.35);
   border-radius: var(--radius-md);
-  color: #b06000;
+  color: var(--gold);
   margin: 12px 0;
   font-size: 13px;
 }
@@ -94,7 +94,7 @@
 /* ===== Focus Ring ===== */
 .focus-ring:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(91,110,244,0.2);
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
 }
 
 /* ===== Fade In ===== */

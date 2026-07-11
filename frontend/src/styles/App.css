@@ -15,7 +15,8 @@
 
 .left-panel {
   min-width: 300px;
-  /* Dark sidebar creates its own visual edge — no border needed */
+  /* Light sidebar — a thin border defines its edge */
+  border-right: 1px solid var(--border);
 }
 
 .right-panel-main {
@@ -24,17 +25,15 @@
   flex-direction: column;
   min-width: 0;
   background: var(--surface-panel);
-  border-radius: 12px 0 0 12px;
   overflow: hidden;
-  box-shadow: var(--shadow-lg);
 }
 
 /* ===== Resize Handle ===== */
 .resize-handle {
-  width: 3px;
-  background: rgba(255,255,255,0.06);
+  width: 1px;
+  background: var(--border);
   cursor: col-resize;
-  transition: background var(--transition), box-shadow var(--transition);
+  transition: background var(--transition);
   position: relative;
   z-index: 10;
   flex-shrink: 0;
@@ -49,6 +48,5 @@
 
 .resize-handle:hover,
 .resize-handle.resizing {
-  background: var(--accent);
-  box-shadow: 0 0 10px var(--accent-glow);
+  background: var(--text-tertiary);
 }

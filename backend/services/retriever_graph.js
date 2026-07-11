@@ -49,6 +49,45 @@ function resolveRange(range, segmentsByNum) {
   return out;
 }
 
+// Canonical form of an article number for matching: uppercase, strip everything
+// but letters/digits. "L.29" -> "L29", "L. 29" -> "L29", "105" -> "105".
+function canonArticle(s) {
+  return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+// Build a lookup: canonical article number -> segment id. Also indexes the
+// bare-digit form (e.g. "L.20" -> both "L20" and "20") so "art. 20" can resolve
+// to "L.20" in codes that prefix their articles.
+function buildCanonArticleIndex(segmentsByNumByDoc) {
+  const index = {};
+  for (const byNum of Object.values(segmentsByNumByDoc || {})) {
+    for (const [num, segId] of Object.entries(byNum)) {
+      const canon = canonArticle(num);
+      if (canon && !(canon in index)) index[canon] = segId;
+      const bare = canon.replace(/^[A-Z]+/, '');
+      if (bare && bare !== canon && !(bare in index)) index[bare] = segId;
+    }
+  }
+  return index;
+}
+
+// Extract article references the user names in a query, as canonical numbers.
+// Accepts "article L.29", "art. L 29", "L.29", "L29", "art 20", "article 105".
+// A bare number is only treated as a reference when preceded by art/article or a
+// letter prefix, so "délai de 15 jours" does not match article 15.
+function parseArticleRefs(query) {
+  const refs = new Set();
+  const re = /(art(?:icle)?s?\.?\s*)?\b(LO|LP|LR|L|R|D|A)?\.?\s?(\d+(?:\.\d+)*)\b/gi;
+  let m;
+  while ((m = re.exec(query || '')) !== null) {
+    const hasKeyword = !!m[1];
+    const prefix = (m[2] || '').toUpperCase();
+    if (!hasKeyword && !prefix) continue; // bare number without context: skip
+    refs.add(canonArticle(prefix + m[3]));
+  }
+  return refs;
+}
+
 async function embedBatch(texts, model = 'text-embedding-3-small') {
   // Batch embed up to a few hundred short segments
   const resp = await openai.embeddings.create({
@@ -59,12 +98,16 @@ async function embedBatch(texts, model = 'text-embedding-3-small') {
   return resp.data.map(d => d.embedding);
 }
 
-function buildContextBlock(seg, idx, docTitle) {
+function buildContextBlock(seg, idx, docTitle, maxBodyChars = 8000) {
   const headerLeft = seg.section_path
     ? seg.section_path
     : seg.label ? seg.label.toUpperCase() : 'SEGMENT';
   const header = `【${idx}】${docTitle ? docTitle + ' — ' : ''}${headerLeft} (${seg.id})`;
-  const body = (seg.text || '').trim();
+  let body = (seg.text || '').trim();
+  // Bound each segment so a few large legal sections can't overflow the model's
+  // context window (gpt-3.5-turbo = 16k tokens). The full text still lives in the
+  // source document; this only limits what is inlined into the prompt.
+  if (body.length > maxBodyChars) body = body.slice(0, maxBodyChars).trimEnd() + ' […]';
   return `${header}\n${body}`;
 }
 
@@ -143,7 +186,31 @@ async function retrieveGraph({ message, document_ids, maxSegments = 8, expandHop
     sim: cosineSimilarity(qVec, segVecs[i])
   })).sort((a, b) => b.sim - a.sim);
 
-  const seeds = scored.slice(0, Math.max(3, Math.min(5, maxSegments))); // 3–5 seeds
+  // Seed with most of the top similarity matches (not just 3–5) so recall scales
+  // with maxSegments; edge expansion then adds cross-referenced neighbours, and
+  // the final list is capped at maxSegments in step 6.
+  const seedCount = Math.max(5, Math.ceil(maxSegments * 0.75));
+  const simSeeds = scored.slice(0, Math.min(seedCount, scored.length));
+
+  // Direct article-number lookup. Embeddings match on topic, not on article
+  // number, so a query like "parle-moi de l'article L.29" rarely surfaces L.29 by
+  // similarity. If the question names specific articles, force-include the exact
+  // matching segments as seeds.
+  const scoredById = new Map(scored.map(c => [c.seg.id, c]));
+  const canonIndex = buildCanonArticleIndex(segmentsByNumByDoc);
+  const forced = [];
+  for (const canon of parseArticleRefs(message)) {
+    const segId = canonIndex[canon];
+    const c = segId && scoredById.get(segId);
+    if (c) forced.push(c);
+  }
+
+  // Forced article matches first, then similarity seeds (deduped by segment id).
+  const seeds = [];
+  const seedIds = new Set();
+  for (const c of [...forced, ...simSeeds]) {
+    if (!seedIds.has(c.seg.id)) { seedIds.add(c.seg.id); seeds.push(c); }
+  }
 
   // 5) Expand via edges (1 hop by default)
   const selectedMap = new Map();
@@ -213,8 +280,24 @@ async function retrieveGraph({ message, document_ids, maxSegments = 8, expandHop
 
   const contextText = blocks.join('\n\n' + '-'.repeat(60) + '\n\n');
 
+  // Per-section sources, one per numbered context block (marker = block number).
+  // Carries the real per-segment docId + article/section label so the UI can show
+  // "【2】 Article L.29" instead of just the file name, and so the caller can keep
+  // only the sections the model actually cites.
+  const sourcesUsed = selected.map((c, i) => ({
+    marker: i + 1,
+    doc_id: c.docId,
+    seg_id: c.seg.id,
+    ref: c.seg?.meta?.number || null,
+    section_path: c.seg.section_path || null,
+    text_preview: (c.seg.text || '').slice(0, 120),
+  }));
+  const docIds = Array.from(new Set(selected.map(c => c.docId)));
+
   return {
     contextText,
+    sourcesUsed,
+    docIds,
     selected: selected.map(s => ({ id: s.seg.id, docId: s.docId, sim: s.sim, why: s.why })),
     debug: { seeds: seeds.map(s => ({ id: s.seg.id, sim: s.sim })) }
   };

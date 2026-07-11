@@ -86,7 +86,12 @@ const ChatMessage = ({ message, isUser, timestamp, isHistory = false, isError = 
           {!isUser && !streaming && entries.length > 0 && (
             <div className="source-chips">
               {entries.map(([key, meta]) => {
-                const label = `【${key}】 ${meta?.doc_title || 'Source'}`;
+                // Prefer the precise section (e.g. "Article L.29") over the file name.
+                const section = meta?.section_path
+                  ? String(meta.section_path).split('>').map(s => s.trim()).filter(Boolean).pop()
+                  : (meta?.ref ? `Art. ${meta.ref}` : null);
+                const label = `【${key}】 ${section || meta?.doc_title || 'Source'}`;
+                const chipTitle = meta?.section_path || meta?.doc_title || undefined;
                 if (meta?.storage_url) {
                   return (
                     <a
@@ -95,7 +100,7 @@ const ChatMessage = ({ message, isUser, timestamp, isHistory = false, isError = 
                       href={meta.storage_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title={meta.doc_title || undefined}
+                      title={chipTitle}
                     >
                       {label}
                     </a>

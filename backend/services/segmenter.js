@@ -15,7 +15,7 @@ function scoreLoisReglements(t) {
   const tests = [
     /(^|\n)\s*(LIVRE|TITRE|CHAPITRE|SECTION|SOUS-SECTION)\s+[IVXLC\d]+(\.|—|-)?\s/i,
     /\bDISPOSITIONS\s+(GÉNÉRALES|FINALES|TRANSITOIRES)\b/i,
-    /(^|\n)\s*(Article|art\.?)\s+\d+(\.\d+)?([\-–]\d+)?\b/i,
+    /(^|\n)\s*(Article|art\.?)\s+(?:[A-Z]{1,3}\.\s?)?\d+(\.\d+)?([\-–]\d+)?\b/i,
     /(^|\n)\s*(Section|Sec\.|s\.)\s+\d+(\.\d+)?(\([a-z0-9]+\))*\b/i,
     /\b(Définitions|Interprétation|Interpretation|Definitions)\b/i,
     /\b(voir|voir aussi)\s+(l'?art\.?|article|s\.)\s+\d+(\.\d+)?/i,
@@ -24,7 +24,7 @@ function scoreLoisReglements(t) {
   ];
   let s = 0;
   for (const re of tests) if (re.test(t)) s++;
-  const articleCount = (t.match(/(^|\n)\s*(Article|art\.?)\s+\d+/gi) || []).length;
+  const articleCount = (t.match(/(^|\n)\s*(Article|art\.?)\s+(?:[A-Z]{1,3}\.\s?)?\d+/gi) || []).length;
   if (articleCount >= 5) s += 2;
   else if (articleCount >= 2) s += 1;
   return s;
@@ -219,7 +219,7 @@ const reSousSection = /^\s*SOUS[-\u2011]SECTION\s+([IVXLC\d]+)\s*(?:[\u2014\u201
 const reDispositionsHdr = /^\s*DISPOSITIONS\s+(GÉNÉRALES|FINALES|TRANSITOIRES)\b.*$/i;
 
 // "Article 12" ou "Art. 12.3 — ..."
-const reArticleHdr  = /^\s*(?:Article|Art\.?|art\.?)\s+(\d+(?:\.\d+)*)(?:\s*[\u2014\u2013-]\s*(.+))?$/;
+const reArticleHdr  = /^\s*(?:Article|Art\.?|art\.?)\s+((?:[A-Z]{1,3}\.\s?)?\d+(?:\.\d+)*)(?:\s*(?:bis|ter))?\s*[.:\u2014\u2013-]?\s*(.*)$/;
 
 function guessArticleRole({ number, title, bodyFirstLine }) {
   const raw = ((title || '') + ' ' + (bodyFirstLine || ''));
@@ -546,6 +546,36 @@ function extractJurisEdges(segments) {
    Fonction publique (preview)
 ---------------------------- */
 
+// Split arbitrary text into retrievable chunks (~chunkChars each), packed on
+// paragraph boundaries. Used as a fallback when no structured segmentation
+// (articles / jurisprudence blocks) is detected, so retrieval still has multiple
+// candidates to match a query against.
+function chunkFallbackSegments(text, chunkChars = 1500) {
+  const norm = normalizeText(text);
+  if (!norm) return [];
+  const paras = norm.split(/\n\s*\n/).map(p => p.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const segments = [];
+  let buf = '';
+  const push = () => {
+    if (!buf.trim()) return;
+    const n = segments.length + 1;
+    segments.push({
+      id: `seg_${String(n).padStart(4, '0')}`,
+      label: 'chunk',
+      text: buf.trim(),
+      meta: { strategy: 'chunk', number: null }
+    });
+    buf = '';
+  };
+  for (const p of paras) {
+    if (buf && buf.length + p.length + 1 > chunkChars) push();
+    buf += (buf ? ' ' : '') + p;
+    if (buf.length >= chunkChars) push();
+  }
+  push();
+  return segments;
+}
+
 function segmentWholeDocument({ documentId, title, text, maxPreviewChars = 50000 }) {
   const safeText = typeof text === 'string' ? text : '';
   const truncated = safeText.length > maxPreviewChars;
@@ -571,7 +601,15 @@ if (detected_type === 'lois_reglements') {
 
 
 if (detected_type === 'jurisprudence') {
-  const segs = segmentJurisprudence(safeText);
+  let segs = segmentJurisprudence(safeText);
+  // When the FR heading structure (Faits / Questions / Motifs / Dispositif) isn't
+  // found, segmentJurisprudence returns the whole decision as ONE block, which
+  // gives retrieval nothing to target. Fall back to size-based chunks so the
+  // query can match the relevant passage.
+  if (segs.length <= 1) {
+    const chunks = chunkFallbackSegments(safeText);
+    if (chunks.length > 1) segs = chunks;
+  }
   if (segs.length > 0) {
     const edges = extractJurisEdges(segs);  // NEW
     return {
@@ -587,14 +625,19 @@ if (detected_type === 'jurisprudence') {
 }
 
 
-  // fallback no-op
+  // Fallback: no structured segmentation matched. Instead of returning the whole
+  // document as ONE segment (which makes retrieval return the same opening block
+  // for every question), split it into retrievable chunks so the query can pick
+  // the most relevant passage.
+  const chunks = chunkFallbackSegments(previewText);
   return {
     document_id: documentId,
     title: title || null,
     detected_type,
     detected_type_human,
     detection_scores: scores,
-    segments: [{
+    edges: [],
+    segments: chunks.length ? chunks : [{
       id: 'seg_0001',
       label: 'whole_document',
       text: previewText,

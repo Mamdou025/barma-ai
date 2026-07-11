@@ -26,27 +26,25 @@
   gap: 8px;
 }
 
-.mindmap-header h2 img { width: 18px; height: 18px; opacity: 0.7; }
+.mindmap-header h2 img { width: 18px; height: 18px; opacity: 0.75; filter: brightness(0) invert(1); }
 
 /* ===== Generate Button ===== */
 .generate-btn {
   padding: 9px 20px;
   border: none;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: #fff;
+  background: var(--accent);
+  color: #0d0d0d;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
   transition: all var(--transition);
-  box-shadow: 0 4px 12px var(--accent-glow);
   letter-spacing: 0.01em;
 }
 
 .generate-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(91,110,244,0.5);
+  background: #ffffff;
 }
 
 .generate-btn:active:not(:disabled) {
@@ -111,7 +109,7 @@
   justify-content: center;
 }
 
-.empty-mindmap-icon img { width: 28px; height: 28px; opacity: 0.7; }
+.empty-mindmap-icon img { width: 28px; height: 28px; opacity: 0.7; filter: brightness(0) invert(1); }
 
 .mindmap-empty h3 {
   font-size: 18px;
@@ -143,54 +141,104 @@
 .mindmap-error h3 { font-size: 16px; color: var(--text-primary); }
 .mindmap-error p { font-size: 14px; max-width: 300px; }
 
-/* ===== Mind Map Display ===== */
+/* ===== Mind Map Display (foldable tree) ===== */
 .mindmap-display {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
 }
 
-.mind-map-h1 {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--text-primary);
-  padding-bottom: 12px;
-  margin-bottom: 8px;
-  border-bottom: 2px solid var(--border);
-  letter-spacing: -0.03em;
+.mindmap-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.mind-map-h2 {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--accent);
-  padding: 8px 14px;
-  background: var(--accent-light);
-  border-left: 3px solid var(--accent);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  margin: 10px 0 4px;
-  letter-spacing: -0.01em;
-}
-
-.mind-map-h3 {
-  font-size: 13px;
+.tree-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text-primary);
-  margin: 4px 0 2px 18px;
-  padding: 4px 0;
+  font-family: inherit;
+  transition: all var(--transition);
 }
 
-.mind-map-li {
-  margin: 3px 0 3px 36px;
+.tree-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+/* Tree structure */
+.mind-tree,
+.mind-children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Indent + guide line for each nested level */
+.mind-children {
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+}
+
+.mind-item { list-style: none; }
+
+.mind-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--transition);
+}
+
+.mind-label:hover { background: var(--accent-light); }
+
+.mind-toggle {
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.mind-title {
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.mind-count {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 7px;
+}
+
+/* Leaf (content) bullets */
+.mind-leaf {
+  list-style: none;
+  position: relative;
+  margin: 2px 0 2px 22px;
+  padding-left: 14px;
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.6;
-  list-style: none;
-  padding-left: 14px;
-  position: relative;
 }
 
-.mind-map-li::before {
+.mind-leaf::before {
   content: '·';
   position: absolute;
   left: 2px;
@@ -198,9 +246,10 @@
   font-weight: 700;
 }
 
-.mind-map-p {
-  margin: 3px 0;
-  color: var(--text-secondary);
-  font-size: 13px;
-  line-height: 1.6;
-}
+/* Per-level emphasis: root → Livre → Titre → Chapitre → Section → Article */
+.mind-lvl-0 .mind-title { font-size: 18px; font-weight: 800; letter-spacing: -0.03em; }
+.mind-lvl-1 .mind-title { font-size: 15px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.02em; }
+.mind-lvl-2 .mind-title { font-size: 14px; font-weight: 700; }
+.mind-lvl-3 .mind-title { font-size: 13px; font-weight: 600; }
+.mind-lvl-4 .mind-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.mind-lvl-5 .mind-title { font-size: 13px; font-weight: 500; }

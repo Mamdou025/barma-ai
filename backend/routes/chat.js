@@ -2,10 +2,8 @@
 const express = require('express');
 const openai = require('../utils/openaiClient');
 const { supabase } = require('../utils/supabaseClient');
-const { getRules } = require('../utils/rulesLoader');
 const { retrieveGraph } = require('../services/retriever_graph'); // graph mode
 
-const rules = getRules();
 const router = express.Router();
 const USE_GRAPH = String(process.env.USE_GRAPH_RETRIEVAL || '').toLowerCase() === 'true';
 
@@ -36,21 +34,12 @@ function ensureHighlights(reply) {
   return r;
 }
 
-function hasBracketCitations(s) {
-  return /【\d+】/.test(s || '');
-}
-function extractContextMarkers(s) {
-  const set = new Set();
-  const re = /【(\d+)】/g;
-  let m;
-  while ((m = re.exec(s || ''))) set.add(Number(m[1]));
-  return Array.from(set).sort((a, b) => a - b);
-}
-function appendSourcesIfMissing(reply, contextText) {
-  if (hasBracketCitations(reply)) return reply;
-  const nums = extractContextMarkers(contextText);
-  if (!nums.length) return reply;
-  return reply + `\n\nSources : ` + nums.map(n => `【${n}】`).join(', ');
+function appendSourcesIfMissing(reply /*, contextText */) {
+  // The model cites sources inline with 【n】 when answering from the document, and
+  // the UI renders source chips from source_map regardless. We no longer staple a
+  // "Sources :" list onto replies that lack citations, since that polluted
+  // conversational answers (greetings, clarifying questions) with bogus markers.
+  return reply;
 }
 
 // Fallback for graph contexts that don’t include sourcesUsed
@@ -142,7 +131,10 @@ async function buildChatContext({ message, document_ids }) {
       } = await retrieveGraph({
         message,
         document_ids,
-        maxSegments: 8,
+        // How many passages to feed the model. Higher = better recall on large
+        // documents (e.g. the 70-article labour code) at the cost of more tokens.
+        // Tune via MAX_SEGMENTS in .env without touching code.
+        maxSegments: Number(process.env.MAX_SEGMENTS) || 16,
         expandHops: 1,
         maxCharsPerSegment: 1200
       });
@@ -263,50 +255,34 @@ async function buildChatContext({ message, document_ids }) {
  * by the buffered and streaming endpoints. `stream` toggles token streaming.
  */
 function buildCompletionParams({ contextText, message, vulgarisation, stream = false }) {
-    // Rules
-    const rulesText = rules?.PAN_rules?.instruction_summary || '';
-    const systemPrompt = `
-${rulesText}
+    const systemPrompt = `Vous êtes un assistant juridique conversationnel qui aide l'utilisateur à comprendre ses documents. Écrivez en français, de façon naturelle et directe, comme dans une vraie conversation — sans formules toutes faites répétitives.
 
-Vous êtes un assistant juridique. Toutes vos affirmations **doivent** être strictement fondées sur le contexte fourni.
-
-RÈGLES OBLIGATOIRES
-1) N'utilisez **aucune** connaissance externe au contexte.
-2) Si un point n'est **pas** dans le contexte, écrivez : "Les documents fournis ne traitent pas de ce point."
-3) À chaque règle ou conclusion, citez vos sources avec le format 【n】 (n = le numéro du bloc du contexte) et, si possible, l'article (ex. art. 20).
-4) Pas de digressions doctrinales/générales non présentes dans le contexte.
-`.trim();
+- Si l'utilisateur pose une véritable question juridique, répondez de manière complète et précise en vous appuyant sur le CONTEXTE fourni : expliquez la règle, citez les articles pertinents et indiquez la source de chaque affirmation importante avec le format 【n】 (n = numéro du bloc du contexte).
+- Fondez vos affirmations juridiques sur le contexte ; n'inventez pas de dispositions qui n'y figurent pas. Si le contexte ne permet pas de répondre, dites-le simplement.
+- Si le message est une salutation, une remarque vague ou hors sujet (ex. « allo », « dis-moi quelque chose »), répondez brièvement et naturellement, puis invitez l'utilisateur à préciser ce qu'il souhaite savoir sur le document. Dans ce cas, ne résumez pas des articles au hasard et n'inventez pas de question.`;
 
     const fullMessage = vulgarisation
-      ? "Mode vulgarisation activé. Réponds de manière simple.\n\n" + message
+      ? "Réponds de manière simple, comme à une personne non-juriste.\n\n" + message
       : message;
 
   return {
-    model: 'gpt-3.5-turbo',
-    temperature: 0.2,
+    // gpt-4o-mini: 128k context window, cheaper than gpt-3.5-turbo, better quality.
+    // Override with OPENAI_CHAT_MODEL if needed.
+    model: process.env.OPENAI_CHAT_MODEL || 'gpt-4o-mini',
+    temperature: 0.5,
     stream,
     messages: [
       { role: 'system', content: systemPrompt },
       {
         role: 'user',
         content:
-`CONTEXTE (numéroté) :
+`CONTEXTE (numéroté, extrait du document) :
 ${contextText}
 
-TÂCHE :
+MESSAGE DE L'UTILISATEUR :
 ${fullMessage}
 
-FORMAT DE SORTIE (exemple) :
-- <mark>Préavis</mark> : 2 semaines (cadres : 3 semaines) — art. 10 【1】
-- <mark>Notification écrite</mark>, effet le lendemain — art. 20 【2】
-- <mark>Majoration</mark> : +1 semaine/an après 2 ans, max 6 — art. 11 【3】
-- Exceptions : <mark>faute grave</mark> (aucun préavis) — art. 12 【4】 ; période d’essai 3 mois — art. 12.1 【5】
-- Indemnité si non-respect du préavis — art. 30 【6】
-
-RÈGLES :
-- Entourez les points clés (termes, chiffres, articles) avec la balise <mark>…</mark> (max 6).
-- Chaque ligne DOIT contenir au moins un marqueur de source 【n】 correspondant au CONTEXTE.
-- Si le point n'est pas couvert par le contexte, écrivez : "Les documents fournis ne traitent pas de ce point."`
+Répondez au message ci-dessus. S'il s'agit d'une question sur le document, appuyez-vous sur le contexte et citez les blocs pertinents avec 【n】 (vous pouvez surligner les termes clés avec <mark>…</mark>). Sinon, répondez simplement et naturellement.`
       }
     ]
   };
@@ -331,6 +307,23 @@ async function logChat({ req, session_id, document_ids, message, finalReply, res
   } catch (logErr) {
     console.error('⚠️ Chat logging error:', logErr);
   }
+}
+
+// Keep only the sources the model actually cited with 【n】, so the UI shows the
+// specific relevant sections instead of every retrieved block. Returns empty when
+// the reply cites nothing (e.g. a conversational answer).
+function keepCitedSources(reply, sourcesUsed, source_map) {
+  const cited = new Set();
+  const re = /【(\d+)】/g;
+  let m;
+  while ((m = re.exec(reply || ''))) cited.add(String(m[1]));
+
+  const sources_used = (sourcesUsed || []).filter(s => cited.has(String(s.marker)));
+  const filteredMap = {};
+  for (const k of Object.keys(source_map || {})) {
+    if (cited.has(k)) filteredMap[k] = source_map[k];
+  }
+  return { sources_used, source_map: filteredMap };
 }
 
 /* ----------------------------------------- Routes ----------------------------------------- */
@@ -368,6 +361,9 @@ router.post('/chat', async (req, res) => {
     let finalReply = appendSourcesIfMissing(aiResponse, contextText);
     finalReply = ensureHighlights(finalReply);
 
+    // Show only the sections the answer cited.
+    const cited = keepCitedSources(finalReply, sourcesUsed, source_map);
+
     const responseTime = Date.now() - startTime;
     await logChat({ req, session_id, document_ids, message, finalReply, responseTime });
 
@@ -375,8 +371,8 @@ router.post('/chat', async (req, res) => {
       reply: finalReply,
       response_time_ms: responseTime,
       retrieval_mode,
-      sources_used: sourcesUsed,
-      source_map
+      sources_used: cited.sources_used,
+      source_map: cited.source_map
     });
 
   } catch (err) {
@@ -452,10 +448,19 @@ router.post('/chat/stream', async (req, res) => {
     let finalReply = appendSourcesIfMissing(aiResponse, contextText);
     finalReply = ensureHighlights(finalReply);
 
+    // Now that the answer is known, keep only the sections it actually cited and
+    // send the trimmed map in `done` (the UI renders chips from this, not `meta`).
+    const cited = keepCitedSources(finalReply, sourcesUsed, source_map);
+
     const responseTime = Date.now() - startTime;
     await logChat({ req, session_id: sid, document_ids, message, finalReply, responseTime });
 
-    send('done', { reply: finalReply, response_time_ms: responseTime, sources_used: sourcesUsed });
+    send('done', {
+      reply: finalReply,
+      response_time_ms: responseTime,
+      sources_used: cited.sources_used,
+      source_map: cited.source_map
+    });
     res.end();
 
   } catch (err) {

@@ -3,10 +3,51 @@ import { api } from '../../utils/api';
 
 import fil001 from '../../icons/fil/fil001.svg';
 
+// One node of the foldable tree. Leaf strings render as bullets; nodes with
+// children render a clickable label that expands/collapses their subtree.
+const MindNode = ({ node, depth, forceOpen }) => {
+  // Default: the first few levels are open so the outline is visible at a glance.
+  const [open, setOpen] = useState(depth < 2);
+  const expanded = forceOpen === null ? open : forceOpen;
+
+  if (typeof node === 'string') {
+    return <li className="mind-leaf">{node}</li>;
+  }
+
+  const children = Array.isArray(node.children) ? node.children : [];
+  const hasChildren = children.length > 0;
+  const lvl = node.level ?? depth;
+
+  return (
+    <li className="mind-item">
+      <div
+        className={`mind-label mind-lvl-${lvl}`}
+        onClick={() => hasChildren && setOpen((v) => !v)}
+        role={hasChildren ? 'button' : undefined}
+      >
+        <span className="mind-toggle">{hasChildren ? (expanded ? '▾' : '▸') : '·'}</span>
+        <span className="mind-title">{node.title}</span>
+        {hasChildren && <span className="mind-count">{children.length}</span>}
+      </div>
+      {hasChildren && expanded && (
+        <ul className="mind-children">
+          {children.map((child, i) => (
+            <MindNode key={i} node={child} depth={depth + 1} forceOpen={forceOpen} />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+};
+
 const MindMapView = ({ selectedDoc }) => {
   const [mindMap, setMindMap] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // null = per-node state; true/false = force all expanded/collapsed. `treeKey`
+  // remounts the tree so nodes re-read their default after a force toggle.
+  const [forceOpen, setForceOpen] = useState(null);
+  const [treeKey, setTreeKey] = useState(0);
 
   const generateMindMap = async () => {
     if (!selectedDoc) {
@@ -15,9 +56,11 @@ const MindMapView = ({ selectedDoc }) => {
     }
     setLoading(true);
     setError(null);
+    setForceOpen(null);
     try {
       const response = await api.generateMindMap([selectedDoc.id]);
       setMindMap(response.mindmap);
+      setTreeKey((k) => k + 1);
     } catch (err) {
       console.error('MindMap generation error:', err);
       setError(err.message);
@@ -26,27 +69,8 @@ const MindMapView = ({ selectedDoc }) => {
     }
   };
 
-  const jsonToMarkdown = (node, level = 1) => {
-    if (!node) return '';
-    const heading = `${'#'.repeat(level)} ${node.title || ''}`;
-    if (!node.children || !Array.isArray(node.children)) return heading;
-    const children = node.children.map(child =>
-      typeof child === 'string' ? `- ${child}` : jsonToMarkdown(child, level + 1)
-    ).join('\n');
-    return `${heading}\n${children}`;
-  };
-
-  const renderMindMap = (text) => {
-    if (!text) return null;
-    return text.split('\n').map((line, index) => {
-      if (line.startsWith('# '))   return <h1 key={index} className="mind-map-h1">{line.slice(2)}</h1>;
-      if (line.startsWith('## '))  return <h2 key={index} className="mind-map-h2">{line.slice(3)}</h2>;
-      if (line.startsWith('### ')) return <h3 key={index} className="mind-map-h3">{line.slice(4)}</h3>;
-      if (line.startsWith('- '))   return <li key={index} className="mind-map-li">{line.slice(2)}</li>;
-      if (line.trim())             return <p key={index} className="mind-map-p">{line}</p>;
-      return <br key={index} />;
-    });
-  };
+  const expandAll = () => { setForceOpen(true); setTreeKey((k) => k + 1); };
+  const collapseAll = () => { setForceOpen(false); setTreeKey((k) => k + 1); };
 
   return (
     <div className="mindmap-container">
@@ -79,7 +103,13 @@ const MindMapView = ({ selectedDoc }) => {
           </div>
         ) : mindMap ? (
           <div className="mindmap-display">
-            {renderMindMap(jsonToMarkdown(mindMap))}
+            <div className="mindmap-toolbar">
+              <button className="tree-btn" onClick={expandAll}>Tout déplier</button>
+              <button className="tree-btn" onClick={collapseAll}>Tout replier</button>
+            </div>
+            <ul className="mind-tree" key={treeKey}>
+              <MindNode node={mindMap} depth={0} forceOpen={forceOpen} />
+            </ul>
           </div>
         ) : (
           <div className="mindmap-empty">
