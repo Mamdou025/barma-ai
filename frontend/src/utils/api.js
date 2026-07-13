@@ -162,7 +162,7 @@ export const api = {
 
   // Chat with AI - matches your /api/chat endpoint
   // sessionId parameter is optional. If provided, it's sent in the payload
-  sendMessage: async (message, documentIds, sessionId) => {
+  sendMessage: async (message, documentIds, sessionId, userName) => {
     // Offline demo mode for built-in sample documents.
     if (areSampleDocIds(documentIds)) {
       return { reply: buildSampleReply(message, documentIds), source_map: {} };
@@ -174,6 +174,9 @@ export const api = {
     };
     if (sessionId) {
       payload.sessionid = sessionId;
+    }
+    if (userName) {
+      payload.user_name = userName;
     }
 
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
@@ -202,7 +205,7 @@ export const api = {
     message,
     documentIds,
     sessionId,
-    { onMeta, onDelta, onDone, signal } = {}
+    { onMeta, onDelta, onDone, signal, userName } = {}
   ) => {
     // Offline demo mode: sample documents don't exist in any backend, so answer
     // locally instead of calling an endpoint that can't know about them.
@@ -216,6 +219,9 @@ export const api = {
     };
     if (sessionId) {
       payload.session_id = sessionId;
+    }
+    if (userName) {
+      payload.user_name = userName;
     }
 
     const response = await fetch(`${API_BASE_URL}/api/chat/stream`, {

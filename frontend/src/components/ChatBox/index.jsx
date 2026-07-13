@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
 import { api } from '../../utils/api';
 import ChatHistory from './ChatHistory';
+import UserSelect, { getStoredUser } from './UserSelect';
 
 // Icones
 import com003 from '../../icons/com/com003.svg';
@@ -12,6 +13,7 @@ const ChatBox = ({ selectedDoc }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [, setError] = useState(null);
+  const [userName, setUserName] = useState(() => getStoredUser());
   const messagesEndRef = useRef(null);
   const sessionIdRef = useRef(null);
 
@@ -97,6 +99,7 @@ const ChatBox = ({ selectedDoc }) => {
 
     try {
       await api.sendMessageStream(userMessage, [selectedDoc.id], sessionIdRef.current, {
+        userName,
         onMeta: ({ source_map }) => {
           ensureAiMessage();
           updateAi({ sourceMap: source_map || {} });
@@ -151,9 +154,12 @@ const ChatBox = ({ selectedDoc }) => {
     <div className="chat-container">
       <div className="chat-header">
         <ChatHistory documentId={selectedDoc?.id} />
-        <h2>
-          <img src={com003} alt="chaticon" /> Discutez avec l'IA
-        </h2>
+        <div className="chat-header-top">
+          <h2>
+            <img src={com003} alt="chaticon" /> Discutez avec l'IA
+          </h2>
+          <UserSelect value={userName} onChange={setUserName} />
+        </div>
         {selectedDoc && (
           <div className="chat-context">
             En analyse: <strong>{selectedDoc.title}</strong>

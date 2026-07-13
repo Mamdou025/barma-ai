@@ -14,6 +14,14 @@
   flex-shrink: 0;
 }
 
+.chat-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
 .chat-header h2 {
   font-size: 15px;
   font-weight: 600;
@@ -23,6 +31,98 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
+}
+
+.chat-header-top h2 {
+  margin-bottom: 0;
+}
+
+/* ===== User (profile) selector ===== */
+.user-select {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.user-select-trigger:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.user-select-trigger.has-user {
+  color: var(--text-primary);
+}
+
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent, #4f46e5);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.user-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  min-width: 190px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.user-select-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm, 7px);
+  cursor: pointer;
+  text-align: left;
+}
+
+.user-select-option:hover {
+  background: var(--surface-muted);
+}
+
+.user-select-option.selected {
+  font-weight: 600;
+}
+
+.user-select-option .check {
+  margin-left: auto;
+  color: var(--accent, #4f46e5);
 }
 
 .chat-header h2 img {

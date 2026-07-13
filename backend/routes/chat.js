@@ -5,7 +5,10 @@ const { supabase } = require('../utils/supabaseClient');
 const { retrieveGraph } = require('../services/retriever_graph'); // graph mode
 
 const router = express.Router();
-const USE_GRAPH = String(process.env.USE_GRAPH_RETRIEVAL || '').toLowerCase() === 'true';
+// Default to graph retrieval: it segments the document at query time and
+// force-includes exact article matches (e.g. "article L.20"), which the legacy
+// top-5-chunks path cannot do. Set USE_GRAPH_RETRIEVAL=false to opt out.
+const USE_GRAPH = String(process.env.USE_GRAPH_RETRIEVAL ?? 'true').toLowerCase() !== 'false';
 
 /* --------------------------------- Highlight helpers --------------------------------- */
 
@@ -289,12 +292,13 @@ Répondez au message ci-dessus. S'il s'agit d'une question sur le document, appu
 }
 
 // Persist a finished exchange to chat_logs (best-effort, never throws).
-async function logChat({ req, session_id, document_ids, message, finalReply, responseTime }) {
+async function logChat({ req, session_id, user_name, document_ids, message, finalReply, responseTime }) {
   try {
     const { error: logError } = await supabase
       .from('chat_logs')
       .insert([{
         session_id: session_id || null,
+        user_name: user_name || null,
         document_id: document_ids[0],
         user_message: message,
         ai_response: finalReply,
@@ -330,7 +334,7 @@ function keepCitedSources(reply, sourcesUsed, source_map) {
 
 // Buffered endpoint — returns the full answer in one JSON payload (unchanged behavior).
 router.post('/chat', async (req, res) => {
-  const { message, document_ids, session_id, vulgarisation = false } = req.body;
+  const { message, document_ids, session_id, user_name, vulgarisation = false } = req.body;
   const startTime = Date.now();
 
   if (!Array.isArray(document_ids) || document_ids.length === 0) {
@@ -365,7 +369,7 @@ router.post('/chat', async (req, res) => {
     const cited = keepCitedSources(finalReply, sourcesUsed, source_map);
 
     const responseTime = Date.now() - startTime;
-    await logChat({ req, session_id, document_ids, message, finalReply, responseTime });
+    await logChat({ req, session_id, user_name, document_ids, message, finalReply, responseTime });
 
     res.json({
       reply: finalReply,
@@ -389,7 +393,7 @@ router.post('/chat', async (req, res) => {
 //   event: done   { reply, response_time_ms, sources_used }  — post-processed answer
 //   event: error  { error }                         — on failure
 router.post('/chat/stream', async (req, res) => {
-  const { message, document_ids, session_id, sessionid, vulgarisation = false } = req.body;
+  const { message, document_ids, session_id, sessionid, user_name, vulgarisation = false } = req.body;
   const sid = session_id || sessionid || null;
   const startTime = Date.now();
 
@@ -453,7 +457,7 @@ router.post('/chat/stream', async (req, res) => {
     const cited = keepCitedSources(finalReply, sourcesUsed, source_map);
 
     const responseTime = Date.now() - startTime;
-    await logChat({ req, session_id: sid, document_ids, message, finalReply, responseTime });
+    await logChat({ req, session_id: sid, user_name, document_ids, message, finalReply, responseTime });
 
     send('done', {
       reply: finalReply,

@@ -33,6 +33,7 @@ router.get('/chatlogs/:documentId', async (req, res) => {
       .select(`
         id,
         session_id,
+        user_name,
         user_message,
         ai_response,
         created_at,
@@ -65,6 +66,7 @@ router.get('/chatlogs', async (req, res) => {
       .select(`
         id,
         session_id,
+        user_name,
         document_id,
         user_message,
         ai_response,
